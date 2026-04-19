@@ -1,11 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { loginUser } from "../api";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -22,18 +20,18 @@ export default function LoginPage() {
       const data = await loginUser({ email, password });
 
       if (data?.accessToken) {
-  localStorage.setItem("token", data.accessToken);
-}
+        localStorage.setItem("token", data.accessToken);
+      }
 
-if (data?.refreshToken) {
-  localStorage.setItem("refreshToken", data.refreshToken);
-}
+      if (data?.refreshToken) {
+        localStorage.setItem("refreshToken", data.refreshToken);
+      }
 
       setSuccess("Login successful.");
 
       setTimeout(() => {
-        router.push("/dashboard");
-      }, 800);
+        window.location.href = "/dashboard";
+      }, 700);
     } catch (err: any) {
       setError(err.message || "Login failed.");
     } finally {
