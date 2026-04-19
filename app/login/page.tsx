@@ -21,13 +21,13 @@ export default function LoginPage() {
     try {
       const data = await loginUser({ email, password });
 
-      if (data?.token) {
-        localStorage.setItem("token", data.token);
-      }
+      if (data?.accessToken) {
+  localStorage.setItem("token", data.accessToken);
+}
 
-      if (data?.user) {
-        localStorage.setItem("user", JSON.stringify(data.user));
-      }
+if (data?.refreshToken) {
+  localStorage.setItem("refreshToken", data.refreshToken);
+}
 
       setSuccess("Login successful.");
 
