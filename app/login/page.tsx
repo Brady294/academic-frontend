@@ -8,12 +8,10 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    setSuccess("");
     setLoading(true);
 
     try {
@@ -27,11 +25,7 @@ export default function LoginPage() {
         localStorage.setItem("refreshToken", data.refreshToken);
       }
 
-      setSuccess("Login successful.");
-
-      setTimeout(() => {
-        window.location.href = "/dashboard";
-      }, 700);
+      window.location.href = "/dashboard";
     } catch (err: any) {
       setError(err.message || "Login failed.");
     } finally {
@@ -94,7 +88,6 @@ export default function LoginPage() {
               </div>
 
               {error ? <p className="message error">{error}</p> : null}
-              {success ? <p className="message success">{success}</p> : null}
 
               <button type="submit" className="submit-btn" disabled={loading}>
                 {loading ? "Logging in..." : "Login"}
@@ -109,9 +102,7 @@ export default function LoginPage() {
       </div>
 
       <style>{`
-        * {
-          box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
         .auth-page {
           min-height: 100vh;
@@ -130,10 +121,9 @@ export default function LoginPage() {
         }
 
         .auth-left {
-          padding: 42px 56px 48px;
+          padding: 42px 56px 56px;
           display: flex;
           flex-direction: column;
-          justify-content: space-between;
         }
 
         .auth-brand {
@@ -148,8 +138,7 @@ export default function LoginPage() {
 
         .auth-left-content {
           max-width: 680px;
-          margin-top: auto;
-          margin-bottom: auto;
+          margin-top: 120px;
         }
 
         .auth-badge {
@@ -281,10 +270,6 @@ export default function LoginPage() {
           color: #dc2626;
         }
 
-        .success {
-          color: #16a34a;
-        }
-
         .switch-text {
           margin: 18px 0 0;
           font-size: 15px;
@@ -312,8 +297,7 @@ export default function LoginPage() {
           }
 
           .auth-left-content {
-            margin-top: 24px;
-            margin-bottom: 0;
+            margin-top: 40px;
           }
 
           .auth-title {
@@ -328,6 +312,10 @@ export default function LoginPage() {
         @media (max-width: 768px) {
           .auth-left {
             padding: 24px 18px 8px;
+          }
+
+          .auth-left-content {
+            margin-top: 28px;
           }
 
           .auth-right {
@@ -389,6 +377,10 @@ export default function LoginPage() {
         @media (max-width: 420px) {
           .auth-left {
             padding: 20px 14px 6px;
+          }
+
+          .auth-left-content {
+            margin-top: 22px;
           }
 
           .auth-right {

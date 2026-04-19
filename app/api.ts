@@ -15,18 +15,19 @@ export async function apiFetch(
       ...options,
       signal: controller.signal,
       headers: {
-        "Content-Type": "application/json",
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...options.headers,
       },
     });
 
+    const contentType = res.headers.get("content-type") || "";
     let data: any = null;
 
-    try {
+    if (contentType.includes("application/json")) {
       data = await res.json();
-    } catch {
-      data = null;
+    } else {
+      const text = await res.text();
+      data = text ? { message: text } : null;
     }
 
     if (!res.ok) {
@@ -52,6 +53,9 @@ export async function loginUser(payload: {
 }) {
   return apiFetch("/auth/login", {
     method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify(payload),
   });
 }
@@ -63,6 +67,34 @@ export async function registerUser(payload: {
 }) {
   return apiFetch("/auth/register", {
     method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify(payload),
+  });
+}
+
+export async function submitAssignment(payload: {
+  title: string;
+  subject: string;
+  deadline: string;
+  instructions: string;
+  files: FileList | null;
+}) {
+  const formData = new FormData();
+  formData.append("title", payload.title);
+  formData.append("subject", payload.subject);
+  formData.append("deadline", payload.deadline);
+  formData.append("instructions", payload.instructions);
+
+  if (payload.files) {
+    Array.from(payload.files).forEach((file) => {
+      formData.append("files", file);
+    });
+  }
+
+  return apiFetch("/assignments", {
+    method: "POST",
+    body: formData,
   });
 }

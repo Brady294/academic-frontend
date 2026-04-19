@@ -1,23 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { registerUser } from "../api";
+import { registerUser, loginUser } from "../api";
 
 export default function RegisterPage() {
-  const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    setSuccess("");
 
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
@@ -33,11 +29,18 @@ export default function RegisterPage() {
 
     try {
       await registerUser({ name, email, password });
-      setSuccess("Registration successful.");
 
-      setTimeout(() => {
-        router.push("/login");
-      }, 900);
+      const loginData = await loginUser({ email, password });
+
+      if (loginData?.accessToken) {
+        localStorage.setItem("token", loginData.accessToken);
+      }
+
+      if (loginData?.refreshToken) {
+        localStorage.setItem("refreshToken", loginData.refreshToken);
+      }
+
+      window.location.href = "/dashboard";
     } catch (err: any) {
       setError(err.message || "Registration failed.");
     } finally {
@@ -122,7 +125,6 @@ export default function RegisterPage() {
               </div>
 
               {error ? <p className="message error">{error}</p> : null}
-              {success ? <p className="message success">{success}</p> : null}
 
               <button type="submit" className="submit-btn" disabled={loading}>
                 {loading ? "Creating account..." : "Register"}
@@ -137,9 +139,7 @@ export default function RegisterPage() {
       </div>
 
       <style>{`
-        * {
-          box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
         .auth-page {
           min-height: 100vh;
@@ -158,10 +158,9 @@ export default function RegisterPage() {
         }
 
         .auth-left {
-          padding: 42px 56px 48px;
+          padding: 42px 56px 56px;
           display: flex;
           flex-direction: column;
-          justify-content: space-between;
         }
 
         .auth-brand {
@@ -176,8 +175,7 @@ export default function RegisterPage() {
 
         .auth-left-content {
           max-width: 680px;
-          margin-top: auto;
-          margin-bottom: auto;
+          margin-top: 120px;
         }
 
         .auth-badge {
@@ -309,10 +307,6 @@ export default function RegisterPage() {
           color: #dc2626;
         }
 
-        .success {
-          color: #16a34a;
-        }
-
         .switch-text {
           margin: 18px 0 0;
           font-size: 15px;
@@ -340,8 +334,7 @@ export default function RegisterPage() {
           }
 
           .auth-left-content {
-            margin-top: 24px;
-            margin-bottom: 0;
+            margin-top: 40px;
           }
 
           .auth-title {
@@ -356,6 +349,10 @@ export default function RegisterPage() {
         @media (max-width: 768px) {
           .auth-left {
             padding: 24px 18px 8px;
+          }
+
+          .auth-left-content {
+            margin-top: 28px;
           }
 
           .auth-right {
@@ -417,6 +414,10 @@ export default function RegisterPage() {
         @media (max-width: 420px) {
           .auth-left {
             padding: 20px 14px 6px;
+          }
+
+          .auth-left-content {
+            margin-top: 22px;
           }
 
           .auth-right {
