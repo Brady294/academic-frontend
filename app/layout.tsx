@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Essay Master",
+  title: "EssayMaster",
   description: "Personalized Essay Writing free of AI",
 };
 
