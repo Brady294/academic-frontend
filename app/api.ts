@@ -4,7 +4,8 @@ export async function apiFetch(
   path: string,
   options: RequestInit = {}
 ) {
-  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
@@ -15,12 +16,21 @@ export async function apiFetch(
     },
   });
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || err.message || "Request failed");
+  let data: any = null;
+
+  try {
+    data = await res.json();
+  } catch {
+    data = null;
   }
 
-  return res.json();
+  if (!res.ok) {
+    throw new Error(
+      data?.error || data?.message || `Request failed with status ${res.status}`
+    );
+  }
+
+  return data;
 }
 
 export async function loginUser(payload: {
