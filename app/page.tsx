@@ -4,40 +4,42 @@ export default function Home() {
       style={{
         minHeight: "100vh",
         background:
-          "linear-gradient(180deg, #f8fbff 0%, #eef4ff 45%, #ffffff 100%)",
+          "linear-gradient(180deg, #f8fbff 0%, #eef4ff 48%, #ffffff 100%)",
         color: "#0f172a",
       }}
     >
       <nav
         style={{
-          maxWidth: "1180px",
-          margin: "0 auto",
-          padding: "24px 24px 0",
+          width: "100%",
+          padding: "24px 48px",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
+          boxSizing: "border-box",
         }}
       >
         <div
           style={{
-            fontSize: "24px",
-            fontWeight: 800,
-            letterSpacing: "-0.03em",
+            fontSize: "30px",
+            fontWeight: 900,
+            letterSpacing: "-0.04em",
             color: "#0f172a",
           }}
         >
           EssayMaster
         </div>
 
-        <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: "14px", alignItems: "center" }}>
           <a
             href="/login"
             style={{
               textDecoration: "none",
               color: "#0f172a",
-              fontWeight: 600,
-              padding: "10px 16px",
-              borderRadius: "10px",
+              fontWeight: 700,
+              padding: "12px 18px",
+              borderRadius: "12px",
+              background: "#ffffff",
+              border: "1px solid #dbe3f0",
             }}
           >
             Login
@@ -49,10 +51,10 @@ export default function Home() {
               textDecoration: "none",
               color: "#ffffff",
               background: "#2563eb",
-              fontWeight: 700,
-              padding: "12px 18px",
-              borderRadius: "12px",
-              boxShadow: "0 10px 25px rgba(37, 99, 235, 0.25)",
+              fontWeight: 800,
+              padding: "13px 20px",
+              borderRadius: "14px",
+              boxShadow: "0 12px 30px rgba(37, 99, 235, 0.25)",
             }}
           >
             Get Started
@@ -62,41 +64,41 @@ export default function Home() {
 
       <section
         style={{
-          maxWidth: "1180px",
-          margin: "0 auto",
-          padding: "70px 24px 40px",
+          width: "100%",
+          padding: "40px 48px 30px",
+          boxSizing: "border-box",
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-          gap: "40px",
+          gridTemplateColumns: "1.08fr 0.92fr",
+          gap: "34px",
           alignItems: "center",
         }}
       >
-        <div>
+        <div style={{ width: "100%" }}>
           <div
             style={{
               display: "inline-flex",
               alignItems: "center",
               gap: "8px",
-              padding: "8px 14px",
+              padding: "9px 16px",
               borderRadius: "999px",
               background: "#dbeafe",
               color: "#1d4ed8",
               fontSize: "14px",
-              fontWeight: 700,
+              fontWeight: 800,
               marginBottom: "22px",
             }}
           >
-            Premium Academic Platform
+            Premium Academic Writing Platform
           </div>
 
           <h1
             style={{
-              fontSize: "64px",
-              lineHeight: "1",
+              fontSize: "78px",
+              lineHeight: "0.95",
               fontWeight: 900,
-              letterSpacing: "-0.05em",
-              margin: "0 0 20px",
-              maxWidth: "620px",
+              letterSpacing: "-0.06em",
+              margin: "0 0 22px",
+              maxWidth: "720px",
             }}
           >
             EssayMaster
@@ -104,101 +106,70 @@ export default function Home() {
 
           <p
             style={{
-              fontSize: "22px",
+              fontSize: "24px",
               lineHeight: "1.6",
               color: "#334155",
               margin: "0 0 28px",
-              maxWidth: "560px",
+              maxWidth: "720px",
             }}
           >
-            Clean academic support with a faster workflow, a smarter dashboard,
-            and a polished experience from start to finish.
+            High-quality academic writing support with fast delivery, clean work,
+            and a secure student dashboard.
           </p>
-
-          <div style={{ display: "flex", gap: "14px", flexWrap: "wrap" }}>
-            <a
-              href="/register"
-              style={{
-                textDecoration: "none",
-                background: "#2563eb",
-                color: "#ffffff",
-                padding: "15px 24px",
-                borderRadius: "14px",
-                fontWeight: 700,
-                boxShadow: "0 12px 30px rgba(37, 99, 235, 0.28)",
-              }}
-            >
-              Start Now
-            </a>
-
-            <a
-              href="/login"
-              style={{
-                textDecoration: "none",
-                background: "#ffffff",
-                color: "#0f172a",
-                padding: "15px 24px",
-                borderRadius: "14px",
-                fontWeight: 700,
-                border: "1px solid #dbe3f0",
-                boxShadow: "0 8px 24px rgba(15, 23, 42, 0.06)",
-              }}
-            >
-              Login
-            </a>
-          </div>
 
           <div
             style={{
               display: "flex",
-              gap: "24px",
+              gap: "26px",
               flexWrap: "wrap",
-              marginTop: "28px",
+              marginTop: "12px",
               color: "#475569",
-              fontSize: "15px",
-              fontWeight: 600,
+              fontSize: "17px",
+              fontWeight: 700,
             }}
           >
             <span>Fast submissions</span>
             <span>Secure dashboard</span>
-            <span>Simple workflow</span>
+            <span>Reliable support</span>
           </div>
         </div>
 
-        <div>
+        <div style={{ width: "100%" }}>
           <div
             style={{
               background:
-                "linear-gradient(135deg, #0f172a 0%, #1d4ed8 55%, #60a5fa 100%)",
-              borderRadius: "28px",
+                "linear-gradient(135deg, #081633 0%, #1d4ed8 55%, #60a5fa 100%)",
+              borderRadius: "30px",
               padding: "30px",
               color: "#ffffff",
-              boxShadow: "0 30px 60px rgba(15, 23, 42, 0.22)",
+              boxShadow: "0 34px 70px rgba(15, 23, 42, 0.22)",
               position: "relative",
               overflow: "hidden",
+              minHeight: "520px",
+              boxSizing: "border-box",
             }}
           >
             <div
               style={{
                 position: "absolute",
-                width: "180px",
-                height: "180px",
+                width: "240px",
+                height: "240px",
                 borderRadius: "999px",
                 background: "rgba(255,255,255,0.12)",
-                top: "-40px",
-                right: "-30px",
+                top: "-50px",
+                right: "-40px",
               }}
             />
 
             <div
               style={{
                 position: "absolute",
-                width: "120px",
-                height: "120px",
+                width: "150px",
+                height: "150px",
                 borderRadius: "999px",
                 background: "rgba(255,255,255,0.08)",
-                bottom: "-20px",
-                left: "-20px",
+                bottom: "-18px",
+                left: "-18px",
               }}
             />
 
@@ -207,8 +178,8 @@ export default function Home() {
                 style={{
                   background: "rgba(255,255,255,0.14)",
                   border: "1px solid rgba(255,255,255,0.18)",
-                  borderRadius: "18px",
-                  padding: "18px",
+                  borderRadius: "20px",
+                  padding: "20px",
                   marginBottom: "18px",
                   backdropFilter: "blur(8px)",
                 }}
@@ -220,17 +191,18 @@ export default function Home() {
                     opacity: 0.9,
                   }}
                 >
-                  Active Platform
+                  Trusted Platform
                 </p>
                 <h3
                   style={{
                     margin: 0,
-                    fontSize: "28px",
-                    fontWeight: 800,
+                    fontSize: "30px",
+                    fontWeight: 900,
                     letterSpacing: "-0.03em",
+                    lineHeight: "1.15",
                   }}
                 >
-                  Built for speed and clarity
+                  Built for serious academic performance
                 </h3>
               </div>
 
@@ -238,20 +210,21 @@ export default function Home() {
                 style={{
                   display: "grid",
                   gridTemplateColumns: "1fr 1fr",
-                  gap: "14px",
+                  gap: "16px",
+                  marginBottom: "16px",
                 }}
               >
                 <div
                   style={{
                     background: "rgba(255,255,255,0.14)",
                     border: "1px solid rgba(255,255,255,0.18)",
-                    borderRadius: "18px",
-                    padding: "18px",
+                    borderRadius: "20px",
+                    padding: "22px",
                   }}
                 >
-                  <div style={{ fontSize: "28px", fontWeight: 800 }}>24/7</div>
-                  <div style={{ fontSize: "14px", opacity: 0.9 }}>
-                    Access anytime
+                  <div style={{ fontSize: "34px", fontWeight: 900 }}>10K+</div>
+                  <div style={{ fontSize: "15px", opacity: 0.95 }}>
+                    Clients served
                   </div>
                 </div>
 
@@ -259,13 +232,37 @@ export default function Home() {
                   style={{
                     background: "rgba(255,255,255,0.14)",
                     border: "1px solid rgba(255,255,255,0.18)",
-                    borderRadius: "18px",
-                    padding: "18px",
+                    borderRadius: "20px",
+                    padding: "22px",
                   }}
                 >
-                  <div style={{ fontSize: "28px", fontWeight: 800 }}>Easy</div>
-                  <div style={{ fontSize: "14px", opacity: 0.9 }}>
-                    Smooth workflow
+                  <div style={{ fontSize: "34px", fontWeight: 900 }}>95%+</div>
+                  <div style={{ fontSize: "15px", opacity: 0.95 }}>
+                    Score target
+                  </div>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr",
+                  gap: "16px",
+                }}
+              >
+                <div
+                  style={{
+                    background: "rgba(255,255,255,0.14)",
+                    border: "1px solid rgba(255,255,255,0.18)",
+                    borderRadius: "20px",
+                    padding: "22px",
+                  }}
+                >
+                  <div style={{ fontSize: "26px", fontWeight: 900 }}>
+                    AI-Free & Plagiarism-Free
+                  </div>
+                  <div style={{ fontSize: "15px", opacity: 0.95, marginTop: "6px" }}>
+                    Clean work prepared for quality and originality.
                   </div>
                 </div>
 
@@ -273,27 +270,15 @@ export default function Home() {
                   style={{
                     background: "rgba(255,255,255,0.14)",
                     border: "1px solid rgba(255,255,255,0.18)",
-                    borderRadius: "18px",
-                    padding: "18px",
+                    borderRadius: "20px",
+                    padding: "22px",
                   }}
                 >
-                  <div style={{ fontSize: "28px", fontWeight: 800 }}>Safe</div>
-                  <div style={{ fontSize: "14px", opacity: 0.9 }}>
-                    Secure account area
+                  <div style={{ fontSize: "26px", fontWeight: 900 }}>
+                    Fast Turnaround
                   </div>
-                </div>
-
-                <div
-                  style={{
-                    background: "rgba(255,255,255,0.14)",
-                    border: "1px solid rgba(255,255,255,0.18)",
-                    borderRadius: "18px",
-                    padding: "18px",
-                  }}
-                >
-                  <div style={{ fontSize: "28px", fontWeight: 800 }}>Fast</div>
-                  <div style={{ fontSize: "14px", opacity: 0.9 }}>
-                    Quick submission flow
+                  <div style={{ fontSize: "15px", opacity: 0.95, marginTop: "6px" }}>
+                    Quick processing for urgent and standard deadlines.
                   </div>
                 </div>
               </div>
@@ -304,84 +289,84 @@ export default function Home() {
 
       <section
         style={{
-          maxWidth: "1180px",
-          margin: "0 auto",
-          padding: "30px 24px 90px",
+          width: "100%",
+          padding: "10px 48px 80px",
+          boxSizing: "border-box",
         }}
       >
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+            gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
             gap: "22px",
           }}
         >
           <div
             style={{
               background: "#ffffff",
-              padding: "28px",
-              borderRadius: "22px",
+              padding: "30px",
+              borderRadius: "24px",
               boxShadow: "0 12px 34px rgba(15, 23, 42, 0.07)",
               border: "1px solid #eef2f7",
             }}
           >
             <h3
               style={{
-                margin: "0 0 10px",
-                fontSize: "22px",
-                fontWeight: 800,
+                margin: "0 0 12px",
+                fontSize: "24px",
+                fontWeight: 900,
               }}
             >
-              Premium Look
+              AI-Free & Plagiarism-Free
             </h3>
-            <p style={{ margin: 0, color: "#475569", lineHeight: "1.7" }}>
-              A cleaner interface that feels modern and professional.
+            <p style={{ margin: 0, color: "#475569", lineHeight: "1.8", fontSize: "17px" }}>
+              Work prepared with originality, clarity, and academic quality in mind.
             </p>
           </div>
 
           <div
             style={{
               background: "#ffffff",
-              padding: "28px",
-              borderRadius: "22px",
+              padding: "30px",
+              borderRadius: "24px",
               boxShadow: "0 12px 34px rgba(15, 23, 42, 0.07)",
               border: "1px solid #eef2f7",
             }}
           >
             <h3
               style={{
-                margin: "0 0 10px",
-                fontSize: "22px",
-                fontWeight: 800,
+                margin: "0 0 12px",
+                fontSize: "24px",
+                fontWeight: 900,
               }}
             >
-              Better Access
+              95%+ Score Focus
             </h3>
-            <p style={{ margin: 0, color: "#475569", lineHeight: "1.7" }}>
-              Direct entry into login, registration, and future dashboard tools.
+            <p style={{ margin: 0, color: "#475569", lineHeight: "1.8", fontSize: "17px" }}>
+              Structured support designed to meet high academic standards.
             </p>
           </div>
 
           <div
             style={{
               background: "#ffffff",
-              padding: "28px",
-              borderRadius: "22px",
+              padding: "30px",
+              borderRadius: "24px",
               boxShadow: "0 12px 34px rgba(15, 23, 42, 0.07)",
               border: "1px solid #eef2f7",
             }}
           >
             <h3
               style={{
-                margin: "0 0 10px",
-                fontSize: "22px",
-                fontWeight: 800,
+                margin: "0 0 12px",
+                fontSize: "24px",
+                fontWeight: 900,
               }}
             >
-              Scalable Base
+              10,000+ Clients Served
             </h3>
-            <p style={{ margin: 0, color: "#475569", lineHeight: "1.7" }}>
-              Ready for pricing, orders, uploads, payments, and admin features.
+            <p style={{ margin: 0, color: "#475569", lineHeight: "1.8", fontSize: "17px" }}>
+              Trusted by a growing client base across multiple academic needs.
             </p>
           </div>
         </div>
