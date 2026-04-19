@@ -4,7 +4,7 @@ export async function apiFetch(
   path: string,
   options: RequestInit = {}
 ) {
-  const token = localStorage.getItem("token");
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
@@ -16,9 +16,30 @@ export async function apiFetch(
   });
 
   if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error || "Request failed");
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || err.message || "Request failed");
   }
 
   return res.json();
+}
+
+export async function loginUser(payload: {
+  email: string;
+  password: string;
+}) {
+  return apiFetch("/auth/login", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function registerUser(payload: {
+  name: string;
+  email: string;
+  password: string;
+}) {
+  return apiFetch("/auth/register", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 }
