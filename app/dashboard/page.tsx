@@ -10,28 +10,27 @@ type StatusCard = {
 
 export default function DashboardPage() {
   const [mounted, setMounted] = useState(false);
-  const [activeTab, setActiveTab] = useState("dashboard");
 
   const cards: StatusCard[] = [
     {
       title: "Open",
       count: 0,
-      subtitle: "Newly submitted work waiting for review",
+      subtitle: "New work you have submitted",
     },
     {
       title: "In Progress",
       count: 0,
-      subtitle: "Assignments currently being worked on",
+      subtitle: "Work currently being handled",
     },
     {
       title: "Complete",
       count: 0,
-      subtitle: "Finished work already delivered to you",
+      subtitle: "Finished work ready for you",
     },
     {
       title: "Rated",
       count: 0,
-      subtitle: "Assignments you have reviewed and rated",
+      subtitle: "Work you have already reviewed",
     },
   ];
 
@@ -63,36 +62,35 @@ export default function DashboardPage() {
   return (
     <main className="dashboard-page">
       <aside className="sidebar">
-        <div className="sidebar-brand">EssayMaster</div>
+        <div className="sidebar-top">
+          <div className="sidebar-brand">EssayMaster</div>
 
-        <nav className="sidebar-nav">
-          <button
-            className={`nav-item ${activeTab === "dashboard" ? "active" : ""}`}
-            onClick={() => setActiveTab("dashboard")}
-          >
-            Dashboard
-          </button>
+          <nav className="sidebar-nav">
+            <a className="nav-item active" href="/dashboard">
+              Dashboard
+            </a>
 
-          <a className="nav-item" href="/submit">
-            Submit Assignment
-          </a>
+            <a className="nav-item" href="/submit">
+              Submit Assignment
+            </a>
 
-          <button className="nav-item" onClick={() => setActiveTab("open")}>
-            Open Orders
-          </button>
+            <button className="nav-item" type="button">
+              Open
+            </button>
 
-          <button className="nav-item" onClick={() => setActiveTab("progress")}>
-            In Progress
-          </button>
+            <button className="nav-item" type="button">
+              In Progress
+            </button>
 
-          <button className="nav-item" onClick={() => setActiveTab("complete")}>
-            Complete
-          </button>
+            <button className="nav-item" type="button">
+              Complete
+            </button>
 
-          <button className="nav-item" onClick={() => setActiveTab("rated")}>
-            Rated
-          </button>
-        </nav>
+            <button className="nav-item" type="button">
+              Rated
+            </button>
+          </nav>
+        </div>
 
         <div className="sidebar-footer">
           <button className="logout-btn" onClick={handleLogout}>
@@ -105,7 +103,7 @@ export default function DashboardPage() {
         <header className="topbar">
           <div>
             <h1 className="page-title">Dashboard</h1>
-            <p className="page-subtitle">Track and manage all your assignments in one place.</p>
+            <p className="page-subtitle">Track your assignments in one place.</p>
           </div>
 
           <div className="topbar-actions">
@@ -118,17 +116,14 @@ export default function DashboardPage() {
         <section className="summary-grid">
           <div className="summary-card big">
             <div className="summary-badge">Overview</div>
-            <h2>Your Assignment Workspace</h2>
-            <p>
-              Monitor each stage of your assignments from submission to final review
-              using a cleaner and more structured dashboard.
-            </p>
+            <h2>Your Work Area</h2>
+            <p>Check the stage of each assignment and move quickly to new submissions.</p>
           </div>
 
           <div className="summary-card accent">
             <span className="mini-label">Total Active</span>
             <div className="big-number">0</div>
-            <p>Assignments currently not yet fully closed.</p>
+            <p>Assignments that are still ongoing.</p>
           </div>
         </section>
 
@@ -148,7 +143,7 @@ export default function DashboardPage() {
         <section className="table-panel">
           <div className="panel-header">
             <h2>Recent Activity</h2>
-            <span className="panel-note">Latest assignment movement will appear here</span>
+            <span className="panel-note">Your latest assignment updates will appear here</span>
           </div>
 
           <div className="table-wrap">
@@ -158,7 +153,7 @@ export default function DashboardPage() {
                   <th>Assignment</th>
                   <th>Status</th>
                   <th>Deadline</th>
-                  <th>Last Update</th>
+                  <th>Updated</th>
                 </tr>
               </thead>
               <tbody>
@@ -189,7 +184,7 @@ export default function DashboardPage() {
         .sidebar {
           background: linear-gradient(180deg, #0f172a 0%, #16263f 100%);
           color: #ffffff;
-          padding: 28px 20px;
+          padding: 20px 20px 24px;
           display: flex;
           flex-direction: column;
           justify-content: space-between;
@@ -198,11 +193,16 @@ export default function DashboardPage() {
           top: 0;
         }
 
+        .sidebar-top {
+          display: grid;
+          gap: 22px;
+        }
+
         .sidebar-brand {
-          font-size: 32px;
+          font-size: 30px;
           font-weight: 900;
           letter-spacing: -0.04em;
-          margin-bottom: 28px;
+          margin: 0;
         }
 
         .sidebar-nav {
@@ -215,7 +215,7 @@ export default function DashboardPage() {
           text-decoration: none;
           background: transparent;
           border: none;
-          color: rgba(255,255,255,0.88);
+          color: rgba(255,255,255,0.9);
           padding: 14px 16px;
           border-radius: 14px;
           font-size: 16px;
@@ -231,7 +231,7 @@ export default function DashboardPage() {
         }
 
         .sidebar-footer {
-          margin-top: 26px;
+          margin-top: 20px;
         }
 
         .logout-btn {
@@ -398,7 +398,7 @@ export default function DashboardPage() {
           color: #475569;
           line-height: 1.7;
           font-size: 15px;
-          min-height: 76px;
+          min-height: 52px;
         }
 
         .view-btn {
@@ -490,7 +490,11 @@ export default function DashboardPage() {
           .sidebar {
             position: relative;
             min-height: auto;
-            padding: 20px 16px;
+            padding: 16px;
+          }
+
+          .sidebar-top {
+            gap: 16px;
           }
 
           .main-area {
