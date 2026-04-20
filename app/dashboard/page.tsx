@@ -5,37 +5,33 @@ import { useEffect, useState } from "react";
 type StatusCard = {
   title: string;
   count: number;
-  description: string;
+  subtitle: string;
 };
 
 export default function DashboardPage() {
   const [mounted, setMounted] = useState(false);
-  const [openTab, setOpenTab] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("dashboard");
 
-  const statusCards: StatusCard[] = [
+  const cards: StatusCard[] = [
     {
       title: "Open",
       count: 0,
-      description:
-        "Your newly submitted assignments appear here while they are being reviewed before work begins.",
+      subtitle: "Newly submitted work waiting for review",
     },
     {
       title: "In Progress",
       count: 0,
-      description:
-        "Assignments that are currently being worked on appear here.",
+      subtitle: "Assignments currently being worked on",
     },
     {
       title: "Complete",
       count: 0,
-      description:
-        "Finished assignments that have already been delivered to you appear here.",
+      subtitle: "Finished work already delivered to you",
     },
     {
       title: "Rated",
       count: 0,
-      description:
-        "Assignments move here after you are fully satisfied and have left your feedback.",
+      subtitle: "Assignments you have reviewed and rated",
     },
   ];
 
@@ -56,10 +52,6 @@ export default function DashboardPage() {
     window.location.href = "/login";
   }
 
-  function toggleTab(title: string) {
-    setOpenTab((current) => (current === title ? null : title));
-  }
-
   if (!mounted) {
     return (
       <main style={{ minHeight: "100vh", display: "grid", placeItems: "center" }}>
@@ -70,56 +62,116 @@ export default function DashboardPage() {
 
   return (
     <main className="dashboard-page">
-      <div className="dashboard-shell">
-        <header className="dashboard-header">
+      <aside className="sidebar">
+        <div className="sidebar-brand">EssayMaster</div>
+
+        <nav className="sidebar-nav">
+          <button
+            className={`nav-item ${activeTab === "dashboard" ? "active" : ""}`}
+            onClick={() => setActiveTab("dashboard")}
+          >
+            Dashboard
+          </button>
+
+          <a className="nav-item" href="/submit">
+            Submit Assignment
+          </a>
+
+          <button className="nav-item" onClick={() => setActiveTab("open")}>
+            Open Orders
+          </button>
+
+          <button className="nav-item" onClick={() => setActiveTab("progress")}>
+            In Progress
+          </button>
+
+          <button className="nav-item" onClick={() => setActiveTab("complete")}>
+            Complete
+          </button>
+
+          <button className="nav-item" onClick={() => setActiveTab("rated")}>
+            Rated
+          </button>
+        </nav>
+
+        <div className="sidebar-footer">
+          <button className="logout-btn" onClick={handleLogout}>
+            Logout
+          </button>
+        </div>
+      </aside>
+
+      <section className="main-area">
+        <header className="topbar">
           <div>
-            <a href="/" className="brand">
-              EssayMaster
-            </a>
-            <p className="subtext">Your Dashboard</p>
+            <h1 className="page-title">Dashboard</h1>
+            <p className="page-subtitle">Track and manage all your assignments in one place.</p>
           </div>
 
-          <div className="header-actions">
+          <div className="topbar-actions">
             <a href="/submit" className="primary-btn">
               Submit New Assignment
             </a>
-            <button className="secondary-btn" onClick={handleLogout}>
-              Logout
-            </button>
           </div>
         </header>
 
-        <section className="intro-card">
-          <div className="intro-badge">Dashboard Overview</div>
-          <h1 className="intro-title">Track your work by stage</h1>
-          <p className="intro-text">
-            See what is waiting, what is being worked on, what is complete, and
-            what you have already reviewed.
-          </p>
+        <section className="summary-grid">
+          <div className="summary-card big">
+            <div className="summary-badge">Overview</div>
+            <h2>Your Assignment Workspace</h2>
+            <p>
+              Monitor each stage of your assignments from submission to final review
+              using a cleaner and more structured dashboard.
+            </p>
+          </div>
+
+          <div className="summary-card accent">
+            <span className="mini-label">Total Active</span>
+            <div className="big-number">0</div>
+            <p>Assignments currently not yet fully closed.</p>
+          </div>
         </section>
 
-        <section className="status-grid">
-          {statusCards.map((card) => {
-            const isOpen = openTab === card.title;
-
-            return (
-              <button
-                key={card.title}
-                type="button"
-                className={`status-card ${isOpen ? "active" : ""}`}
-                onClick={() => toggleTab(card.title)}
-              >
-                <div className="status-main">
-                  <h2>{card.title}</h2>
-                  <span className="status-count">{card.count}</span>
-                </div>
-
-                {isOpen ? <p className="status-description">{card.description}</p> : null}
-              </button>
-            );
-          })}
+        <section className="cards-grid">
+          {cards.map((card) => (
+            <div className="stage-card" key={card.title}>
+              <div className="stage-header">
+                <h3>{card.title}</h3>
+                <span className="stage-count">{card.count}</span>
+              </div>
+              <p>{card.subtitle}</p>
+              <button className="view-btn">View {card.title}</button>
+            </div>
+          ))}
         </section>
-      </div>
+
+        <section className="table-panel">
+          <div className="panel-header">
+            <h2>Recent Activity</h2>
+            <span className="panel-note">Latest assignment movement will appear here</span>
+          </div>
+
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Assignment</th>
+                  <th>Status</th>
+                  <th>Deadline</th>
+                  <th>Last Update</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colSpan={4} className="empty-row">
+                    No assignment activity yet.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </section>
 
       <style>{`
         * {
@@ -128,219 +180,347 @@ export default function DashboardPage() {
 
         .dashboard-page {
           min-height: 100vh;
-          background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 48%, #ffffff 100%);
-          padding: 28px 18px 40px;
+          display: grid;
+          grid-template-columns: 280px 1fr;
+          background: #f5f7fb;
+          color: #0f172a;
         }
 
-        .dashboard-shell {
-          max-width: 1180px;
-          margin: 0 auto;
+        .sidebar {
+          background: linear-gradient(180deg, #0f172a 0%, #16263f 100%);
+          color: #ffffff;
+          padding: 28px 20px;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          min-height: 100vh;
+          position: sticky;
+          top: 0;
         }
 
-        .dashboard-header {
+        .sidebar-brand {
+          font-size: 32px;
+          font-weight: 900;
+          letter-spacing: -0.04em;
+          margin-bottom: 28px;
+        }
+
+        .sidebar-nav {
+          display: grid;
+          gap: 10px;
+        }
+
+        .nav-item {
+          text-align: left;
+          text-decoration: none;
+          background: transparent;
+          border: none;
+          color: rgba(255,255,255,0.88);
+          padding: 14px 16px;
+          border-radius: 14px;
+          font-size: 16px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: background 0.18s ease, color 0.18s ease;
+        }
+
+        .nav-item:hover,
+        .nav-item.active {
+          background: rgba(255,255,255,0.12);
+          color: #ffffff;
+        }
+
+        .sidebar-footer {
+          margin-top: 26px;
+        }
+
+        .logout-btn {
+          width: 100%;
+          border: 1px solid rgba(255,255,255,0.18);
+          background: rgba(255,255,255,0.08);
+          color: #ffffff;
+          border-radius: 14px;
+          padding: 14px 16px;
+          font-size: 15px;
+          font-weight: 800;
+          cursor: pointer;
+        }
+
+        .main-area {
+          padding: 28px;
+        }
+
+        .topbar {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          gap: 18px;
+          gap: 20px;
           flex-wrap: wrap;
-          margin-bottom: 26px;
+          margin-bottom: 24px;
         }
 
-        .brand {
+        .page-title {
+          margin: 0 0 6px;
+          font-size: 40px;
+          font-weight: 900;
+          letter-spacing: -0.04em;
+        }
+
+        .page-subtitle {
+          margin: 0;
+          color: #64748b;
+          font-size: 16px;
+        }
+
+        .primary-btn {
           text-decoration: none;
-          color: #0f172a;
+          background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+          color: #ffffff;
+          padding: 14px 20px;
+          border-radius: 14px;
+          font-size: 15px;
+          font-weight: 800;
+          box-shadow: 0 14px 30px rgba(37, 99, 235, 0.22);
+        }
+
+        .summary-grid {
+          display: grid;
+          grid-template-columns: 1.4fr 0.8fr;
+          gap: 20px;
+          margin-bottom: 24px;
+        }
+
+        .summary-card {
+          background: #ffffff;
+          border: 1px solid #e6edf7;
+          border-radius: 24px;
+          padding: 24px;
+          box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
+        }
+
+        .summary-card.big h2 {
+          margin: 0 0 12px;
           font-size: 34px;
           font-weight: 900;
           letter-spacing: -0.04em;
         }
 
-        .subtext {
-          margin: 6px 0 0;
-          color: #64748b;
-          font-size: 15px;
-        }
-
-        .header-actions {
-          display: flex;
-          gap: 12px;
-          flex-wrap: wrap;
-        }
-
-        .primary-btn,
-        .secondary-btn {
-          border: none;
-          text-decoration: none;
-          padding: 14px 18px;
-          border-radius: 14px;
-          font-size: 15px;
-          font-weight: 800;
-          cursor: pointer;
-        }
-
-        .primary-btn {
-          background: #2563eb;
-          color: #ffffff;
-          box-shadow: 0 12px 28px rgba(37, 99, 235, 0.22);
-        }
-
-        .secondary-btn {
-          background: #ffffff;
-          color: #0f172a;
-          border: 1px solid #dbe3f0;
-        }
-
-        .intro-card {
-          background: #ffffff;
-          border: 1px solid #e8eef7;
-          border-radius: 28px;
-          padding: 30px;
-          box-shadow: 0 18px 48px rgba(15, 23, 42, 0.08);
-          margin-bottom: 22px;
-        }
-
-        .intro-badge {
-          display: inline-flex;
-          padding: 10px 16px;
-          border-radius: 999px;
-          background: #dbeafe;
-          color: #1d4ed8;
-          font-size: 14px;
-          font-weight: 800;
-          margin-bottom: 16px;
-        }
-
-        .intro-title {
-          margin: 0 0 14px;
-          font-size: 48px;
-          line-height: 1;
-          font-weight: 900;
-          color: #0f172a;
-          letter-spacing: -0.04em;
-        }
-
-        .intro-text {
+        .summary-card.big p {
           margin: 0;
           color: #475569;
-          font-size: 18px;
-          line-height: 1.7;
+          line-height: 1.8;
+          font-size: 16px;
           max-width: 760px;
         }
 
-        .status-grid {
+        .summary-badge {
+          display: inline-flex;
+          padding: 9px 14px;
+          border-radius: 999px;
+          background: #dbeafe;
+          color: #1d4ed8;
+          font-size: 13px;
+          font-weight: 800;
+          margin-bottom: 14px;
+        }
+
+        .summary-card.accent {
+          background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%);
+          color: #ffffff;
+        }
+
+        .mini-label {
+          display: block;
+          font-size: 13px;
+          font-weight: 700;
+          opacity: 0.85;
+          margin-bottom: 12px;
+        }
+
+        .big-number {
+          font-size: 56px;
+          line-height: 1;
+          font-weight: 900;
+          margin-bottom: 10px;
+        }
+
+        .summary-card.accent p {
+          margin: 0;
+          font-size: 15px;
+          line-height: 1.7;
+          opacity: 0.95;
+        }
+
+        .cards-grid {
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
           gap: 18px;
+          margin-bottom: 24px;
         }
 
-        .status-card {
-          width: 100%;
-          text-align: left;
+        .stage-card {
           background: #ffffff;
-          border: 1px solid #e8eef7;
-          border-radius: 26px;
-          padding: 28px;
-          box-shadow: 0 14px 36px rgba(15, 23, 42, 0.06);
-          cursor: pointer;
-          transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
-          min-height: 180px;
+          border: 1px solid #e6edf7;
+          border-radius: 22px;
+          padding: 22px;
+          box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
         }
 
-        .status-card:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 18px 40px rgba(15, 23, 42, 0.1);
-        }
-
-        .status-card.active {
-          border-color: #bfdbfe;
-          box-shadow: 0 20px 42px rgba(37, 99, 235, 0.12);
-        }
-
-        .status-main {
+        .stage-header {
           display: flex;
           justify-content: space-between;
-          align-items: flex-start;
-          gap: 14px;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 14px;
         }
 
-        .status-main h2 {
+        .stage-header h3 {
           margin: 0;
-          font-size: 32px;
+          font-size: 26px;
           font-weight: 900;
-          color: #0f172a;
-          line-height: 1.05;
+          letter-spacing: -0.03em;
         }
 
-        .status-count {
-          min-width: 50px;
-          height: 50px;
+        .stage-count {
+          min-width: 46px;
+          height: 46px;
           display: grid;
           place-items: center;
           border-radius: 999px;
           background: #eff6ff;
           color: #1d4ed8;
-          font-size: 18px;
+          font-size: 17px;
           font-weight: 900;
-          flex-shrink: 0;
         }
 
-        .status-description {
-          margin: 18px 0 0;
+        .stage-card p {
+          margin: 0 0 18px;
           color: #475569;
-          line-height: 1.75;
-          font-size: 16px;
+          line-height: 1.7;
+          font-size: 15px;
+          min-height: 76px;
         }
 
-        @media (max-width: 1100px) {
-          .status-grid {
+        .view-btn {
+          width: 100%;
+          border: none;
+          background: #f8fafc;
+          color: #0f172a;
+          padding: 12px 14px;
+          border-radius: 14px;
+          font-size: 14px;
+          font-weight: 800;
+          cursor: pointer;
+        }
+
+        .table-panel {
+          background: #ffffff;
+          border: 1px solid #e6edf7;
+          border-radius: 24px;
+          padding: 22px;
+          box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
+        }
+
+        .panel-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 12px;
+          flex-wrap: wrap;
+          margin-bottom: 16px;
+        }
+
+        .panel-header h2 {
+          margin: 0;
+          font-size: 24px;
+          font-weight: 900;
+        }
+
+        .panel-note {
+          color: #64748b;
+          font-size: 14px;
+        }
+
+        .table-wrap {
+          overflow-x: auto;
+        }
+
+        table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+
+        th {
+          text-align: left;
+          font-size: 14px;
+          color: #64748b;
+          font-weight: 800;
+          padding: 14px 12px;
+          border-bottom: 1px solid #e6edf7;
+        }
+
+        td {
+          padding: 18px 12px;
+          border-bottom: 1px solid #eef2f7;
+          font-size: 15px;
+          color: #0f172a;
+        }
+
+        .empty-row {
+          text-align: center;
+          color: #64748b;
+          padding: 28px 12px;
+        }
+
+        @media (max-width: 1200px) {
+          .cards-grid {
             grid-template-columns: 1fr 1fr;
           }
 
-          .intro-title {
-            font-size: 40px;
+          .summary-grid {
+            grid-template-columns: 1fr;
           }
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 900px) {
           .dashboard-page {
-            padding: 20px 14px 30px;
-          }
-
-          .brand {
-            font-size: 28px;
-          }
-
-          .intro-card,
-          .status-card {
-            border-radius: 20px;
-          }
-
-          .intro-card {
-            padding: 22px 16px;
-          }
-
-          .intro-title {
-            font-size: 32px;
-          }
-
-          .intro-text {
-            font-size: 16px;
-          }
-
-          .status-grid {
             grid-template-columns: 1fr;
           }
 
-          .status-card {
-            padding: 22px 16px;
-            min-height: 140px;
+          .sidebar {
+            position: relative;
+            min-height: auto;
+            padding: 20px 16px;
           }
 
-          .status-main h2 {
+          .main-area {
+            padding: 20px 14px 28px;
+          }
+
+          .page-title {
+            font-size: 32px;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .cards-grid {
+            grid-template-columns: 1fr;
+          }
+
+          .summary-card.big h2 {
             font-size: 28px;
           }
 
-          .status-description {
-            font-size: 15px;
+          .big-number {
+            font-size: 44px;
+          }
+
+          .stage-header h3 {
+            font-size: 22px;
+          }
+
+          .sidebar-brand {
+            font-size: 28px;
           }
         }
       `}</style>
