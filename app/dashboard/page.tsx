@@ -2,8 +2,41 @@
 
 import { useEffect, useState } from "react";
 
+type StatusCard = {
+  title: string;
+  count: number;
+  description: string;
+};
+
 export default function DashboardPage() {
   const [mounted, setMounted] = useState(false);
+
+  const statusCards: StatusCard[] = [
+    {
+      title: "Open",
+      count: 0,
+      description:
+        "Newly submitted assignments appear here until the admin confirms everything is complete and ready to begin.",
+    },
+    {
+      title: "In Progress",
+      count: 0,
+      description:
+        "Assignments that have been approved and are currently being worked on appear in this section.",
+    },
+    {
+      title: "Complete",
+      count: 0,
+      description:
+        "Finished assignments that have been delivered to the client are moved here.",
+    },
+    {
+      title: "Rated",
+      count: 0,
+      description:
+        "Once the client is fully satisfied and leaves feedback, the assignment moves to this stage.",
+    },
+  ];
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -38,7 +71,7 @@ export default function DashboardPage() {
             <a href="/" className="brand">
               EssayMaster
             </a>
-            <p className="subtext">Student Dashboard</p>
+            <p className="subtext">Assignment Dashboard</p>
           </div>
 
           <div className="header-actions">
@@ -51,63 +84,54 @@ export default function DashboardPage() {
           </div>
         </header>
 
-        <section className="hero-card">
-          <div className="hero-left">
-            <div className="hero-badge">Dashboard</div>
-            <h1 className="hero-title">Welcome to your workspace</h1>
-            <p className="hero-text">
-              Submit assignments, upload files, track progress, and manage your
-              academic requests from one place.
-            </p>
-          </div>
-
-          <div className="stats-grid">
-            <div className="stat-card">
-              <h3>New Request</h3>
-              <p>Start a fresh assignment submission with files and instructions.</p>
-            </div>
-
-            <div className="stat-card">
-              <h3>Secure Uploads</h3>
-              <p>Upload documents, spreadsheets, presentations, PDFs, images, and more.</p>
-            </div>
-
-            <div className="stat-card">
-              <h3>Fast Access</h3>
-              <p>Move quickly between your dashboard and submission flow.</p>
-            </div>
-
-            <div className="stat-card">
-              <h3>Organized Workflow</h3>
-              <p>Keep everything in one clean and responsive interface.</p>
-            </div>
-          </div>
+        <section className="intro-card">
+          <div className="intro-badge">Dashboard Overview</div>
+          <h1 className="intro-title">Track every assignment by stage</h1>
+          <p className="intro-text">
+            Your assignments move through a clear workflow from submission to
+            final client satisfaction.
+          </p>
         </section>
 
-        <section className="quick-actions">
-          <a href="/submit" className="action-card">
-            <h3>Submit New Assignment</h3>
-            <p>Upload your files and add all assignment instructions.</p>
-          </a>
+        <section className="status-grid">
+          {statusCards.map((card) => (
+            <div className="status-card" key={card.title}>
+              <div className="status-top">
+                <h2>{card.title}</h2>
+                <span className="status-count">{card.count}</span>
+              </div>
+              <p>{card.description}</p>
+            </div>
+          ))}
+        </section>
 
-          <div className="action-card">
-            <h3>Accepted File Types</h3>
-            <p>PDF, DOC, DOCX, PPT, PPTX, XLS, XLSX, TXT, ZIP, JPG, JPEG, PNG, CSV and more.</p>
+        <section className="workflow-card">
+          <h2 className="workflow-title">Assignment Flow</h2>
+          <div className="workflow-steps">
+            <div className="workflow-step">Open</div>
+            <div className="workflow-arrow">→</div>
+            <div className="workflow-step">In Progress</div>
+            <div className="workflow-arrow">→</div>
+            <div className="workflow-step">Complete</div>
+            <div className="workflow-arrow">→</div>
+            <div className="workflow-step">Rated</div>
           </div>
         </section>
       </div>
 
       <style>{`
-        * { box-sizing: border-box; }
+        * {
+          box-sizing: border-box;
+        }
 
         .dashboard-page {
           min-height: 100vh;
           background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 48%, #ffffff 100%);
-          padding: 32px 20px;
+          padding: 28px 18px 40px;
         }
 
         .dashboard-shell {
-          max-width: 1200px;
+          max-width: 1180px;
           margin: 0 auto;
         }
 
@@ -115,9 +139,9 @@ export default function DashboardPage() {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          gap: 20px;
-          margin-bottom: 28px;
+          gap: 18px;
           flex-wrap: wrap;
+          margin-bottom: 26px;
         }
 
         .brand {
@@ -163,19 +187,16 @@ export default function DashboardPage() {
           border: 1px solid #dbe3f0;
         }
 
-        .hero-card {
+        .intro-card {
           background: #ffffff;
           border: 1px solid #e8eef7;
-          border-radius: 30px;
-          padding: 32px;
+          border-radius: 28px;
+          padding: 30px;
           box-shadow: 0 18px 48px rgba(15, 23, 42, 0.08);
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 28px;
-          margin-bottom: 24px;
+          margin-bottom: 22px;
         }
 
-        .hero-badge {
+        .intro-badge {
           display: inline-flex;
           padding: 10px 16px;
           border-radius: 999px;
@@ -183,123 +204,163 @@ export default function DashboardPage() {
           color: #1d4ed8;
           font-size: 14px;
           font-weight: 800;
-          margin-bottom: 18px;
+          margin-bottom: 16px;
         }
 
-        .hero-title {
-          margin: 0 0 16px;
-          font-size: 56px;
-          line-height: 0.98;
+        .intro-title {
+          margin: 0 0 14px;
+          font-size: 48px;
+          line-height: 1;
           font-weight: 900;
           color: #0f172a;
-          letter-spacing: -0.05em;
+          letter-spacing: -0.04em;
         }
 
-        .hero-text {
-          margin: 0;
-          color: #334155;
-          font-size: 20px;
-          line-height: 1.7;
-          max-width: 560px;
-        }
-
-        .stats-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 16px;
-        }
-
-        .stat-card {
-          background: linear-gradient(135deg, #081633 0%, #1d4ed8 55%, #60a5fa 100%);
-          color: #ffffff;
-          border-radius: 22px;
-          padding: 22px;
-        }
-
-        .stat-card h3 {
-          margin: 0 0 10px;
-          font-size: 22px;
-          font-weight: 900;
-        }
-
-        .stat-card p {
-          margin: 0;
-          line-height: 1.6;
-          font-size: 15px;
-          opacity: 0.95;
-        }
-
-        .quick-actions {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 20px;
-        }
-
-        .action-card {
-          display: block;
-          text-decoration: none;
-          background: #ffffff;
-          color: #0f172a;
-          border: 1px solid #e8eef7;
-          border-radius: 24px;
-          padding: 28px;
-          box-shadow: 0 18px 48px rgba(15, 23, 42, 0.06);
-        }
-
-        .action-card h3 {
-          margin: 0 0 12px;
-          font-size: 24px;
-          font-weight: 900;
-        }
-
-        .action-card p {
+        .intro-text {
           margin: 0;
           color: #475569;
+          font-size: 18px;
           line-height: 1.7;
+          max-width: 760px;
         }
 
-        @media (max-width: 980px) {
-          .hero-card {
-            grid-template-columns: 1fr;
+        .status-grid {
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 18px;
+          margin-bottom: 22px;
+        }
+
+        .status-card {
+          background: #ffffff;
+          border: 1px solid #e8eef7;
+          border-radius: 24px;
+          padding: 24px;
+          box-shadow: 0 14px 36px rgba(15, 23, 42, 0.06);
+        }
+
+        .status-top {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 14px;
+        }
+
+        .status-top h2 {
+          margin: 0;
+          font-size: 24px;
+          font-weight: 900;
+          color: #0f172a;
+        }
+
+        .status-count {
+          min-width: 42px;
+          height: 42px;
+          display: grid;
+          place-items: center;
+          border-radius: 999px;
+          background: #eff6ff;
+          color: #1d4ed8;
+          font-size: 16px;
+          font-weight: 900;
+        }
+
+        .status-card p {
+          margin: 0;
+          color: #475569;
+          line-height: 1.75;
+          font-size: 15px;
+        }
+
+        .workflow-card {
+          background: #ffffff;
+          border: 1px solid #e8eef7;
+          border-radius: 24px;
+          padding: 24px;
+          box-shadow: 0 14px 36px rgba(15, 23, 42, 0.06);
+        }
+
+        .workflow-title {
+          margin: 0 0 18px;
+          font-size: 26px;
+          font-weight: 900;
+          color: #0f172a;
+        }
+
+        .workflow-steps {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .workflow-step {
+          background: #eff6ff;
+          color: #1d4ed8;
+          padding: 12px 18px;
+          border-radius: 14px;
+          font-weight: 800;
+          font-size: 15px;
+        }
+
+        .workflow-arrow {
+          color: #64748b;
+          font-size: 18px;
+          font-weight: 900;
+        }
+
+        @media (max-width: 1100px) {
+          .status-grid {
+            grid-template-columns: 1fr 1fr;
           }
 
-          .quick-actions {
-            grid-template-columns: 1fr;
-          }
-
-          .hero-title {
-            font-size: 42px;
-          }
-
-          .hero-text {
-            font-size: 17px;
+          .intro-title {
+            font-size: 40px;
           }
         }
 
         @media (max-width: 768px) {
           .dashboard-page {
-            padding: 20px 14px;
+            padding: 20px 14px 30px;
           }
 
           .brand {
             font-size: 28px;
           }
 
-          .hero-card {
+          .intro-card,
+          .workflow-card,
+          .status-card {
+            border-radius: 20px;
+          }
+
+          .intro-card {
             padding: 22px 16px;
-            border-radius: 22px;
           }
 
-          .hero-title {
-            font-size: 34px;
+          .intro-title {
+            font-size: 32px;
           }
 
-          .stats-grid {
+          .intro-text {
+            font-size: 16px;
+          }
+
+          .status-grid {
             grid-template-columns: 1fr;
           }
 
-          .action-card {
+          .status-card {
             padding: 20px 16px;
+          }
+
+          .workflow-card {
+            padding: 20px 16px;
+          }
+
+          .workflow-title {
+            font-size: 22px;
           }
         }
       `}</style>
