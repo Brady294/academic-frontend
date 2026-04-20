@@ -10,31 +10,32 @@ type StatusCard = {
 
 export default function DashboardPage() {
   const [mounted, setMounted] = useState(false);
+  const [openTab, setOpenTab] = useState<string | null>(null);
 
   const statusCards: StatusCard[] = [
     {
       title: "Open",
       count: 0,
       description:
-        "Newly submitted assignments appear here until the admin confirms everything is complete and ready to begin.",
+        "Your newly submitted assignments appear here while they are being reviewed before work begins.",
     },
     {
       title: "In Progress",
       count: 0,
       description:
-        "Assignments that have been approved and are currently being worked on appear in this section.",
+        "Assignments that are currently being worked on appear here.",
     },
     {
       title: "Complete",
       count: 0,
       description:
-        "Finished assignments that have been delivered to the client are moved here.",
+        "Finished assignments that have already been delivered to you appear here.",
     },
     {
       title: "Rated",
       count: 0,
       description:
-        "Once the client is fully satisfied and leaves feedback, the assignment moves to this stage.",
+        "Assignments move here after you are fully satisfied and have left your feedback.",
     },
   ];
 
@@ -55,6 +56,10 @@ export default function DashboardPage() {
     window.location.href = "/login";
   }
 
+  function toggleTab(title: string) {
+    setOpenTab((current) => (current === title ? null : title));
+  }
+
   if (!mounted) {
     return (
       <main style={{ minHeight: "100vh", display: "grid", placeItems: "center" }}>
@@ -71,7 +76,7 @@ export default function DashboardPage() {
             <a href="/" className="brand">
               EssayMaster
             </a>
-            <p className="subtext">Assignment Dashboard</p>
+            <p className="subtext">Your Dashboard</p>
           </div>
 
           <div className="header-actions">
@@ -86,36 +91,33 @@ export default function DashboardPage() {
 
         <section className="intro-card">
           <div className="intro-badge">Dashboard Overview</div>
-          <h1 className="intro-title">Track every assignment by stage</h1>
+          <h1 className="intro-title">Track your work by stage</h1>
           <p className="intro-text">
-            Your assignments move through a clear workflow from submission to
-            final client satisfaction.
+            See what is waiting, what is being worked on, what is complete, and
+            what you have already reviewed.
           </p>
         </section>
 
         <section className="status-grid">
-          {statusCards.map((card) => (
-            <div className="status-card" key={card.title}>
-              <div className="status-top">
-                <h2>{card.title}</h2>
-                <span className="status-count">{card.count}</span>
-              </div>
-              <p>{card.description}</p>
-            </div>
-          ))}
-        </section>
+          {statusCards.map((card) => {
+            const isOpen = openTab === card.title;
 
-        <section className="workflow-card">
-          <h2 className="workflow-title">Assignment Flow</h2>
-          <div className="workflow-steps">
-            <div className="workflow-step">Open</div>
-            <div className="workflow-arrow">→</div>
-            <div className="workflow-step">In Progress</div>
-            <div className="workflow-arrow">→</div>
-            <div className="workflow-step">Complete</div>
-            <div className="workflow-arrow">→</div>
-            <div className="workflow-step">Rated</div>
-          </div>
+            return (
+              <button
+                key={card.title}
+                type="button"
+                className={`status-card ${isOpen ? "active" : ""}`}
+                onClick={() => toggleTab(card.title)}
+              >
+                <div className="status-main">
+                  <h2>{card.title}</h2>
+                  <span className="status-count">{card.count}</span>
+                </div>
+
+                {isOpen ? <p className="status-description">{card.description}</p> : null}
+              </button>
+            );
+          })}
         </section>
       </div>
 
@@ -228,86 +230,64 @@ export default function DashboardPage() {
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
           gap: 18px;
-          margin-bottom: 22px;
         }
 
         .status-card {
+          width: 100%;
+          text-align: left;
           background: #ffffff;
           border: 1px solid #e8eef7;
-          border-radius: 24px;
-          padding: 24px;
+          border-radius: 26px;
+          padding: 28px;
           box-shadow: 0 14px 36px rgba(15, 23, 42, 0.06);
+          cursor: pointer;
+          transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+          min-height: 180px;
         }
 
-        .status-top {
+        .status-card:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 18px 40px rgba(15, 23, 42, 0.1);
+        }
+
+        .status-card.active {
+          border-color: #bfdbfe;
+          box-shadow: 0 20px 42px rgba(37, 99, 235, 0.12);
+        }
+
+        .status-main {
           display: flex;
           justify-content: space-between;
-          align-items: center;
-          gap: 12px;
-          margin-bottom: 14px;
+          align-items: flex-start;
+          gap: 14px;
         }
 
-        .status-top h2 {
+        .status-main h2 {
           margin: 0;
-          font-size: 24px;
+          font-size: 32px;
           font-weight: 900;
           color: #0f172a;
+          line-height: 1.05;
         }
 
         .status-count {
-          min-width: 42px;
-          height: 42px;
+          min-width: 50px;
+          height: 50px;
           display: grid;
           place-items: center;
           border-radius: 999px;
           background: #eff6ff;
           color: #1d4ed8;
-          font-size: 16px;
-          font-weight: 900;
-        }
-
-        .status-card p {
-          margin: 0;
-          color: #475569;
-          line-height: 1.75;
-          font-size: 15px;
-        }
-
-        .workflow-card {
-          background: #ffffff;
-          border: 1px solid #e8eef7;
-          border-radius: 24px;
-          padding: 24px;
-          box-shadow: 0 14px 36px rgba(15, 23, 42, 0.06);
-        }
-
-        .workflow-title {
-          margin: 0 0 18px;
-          font-size: 26px;
-          font-weight: 900;
-          color: #0f172a;
-        }
-
-        .workflow-steps {
-          display: flex;
-          flex-wrap: wrap;
-          align-items: center;
-          gap: 12px;
-        }
-
-        .workflow-step {
-          background: #eff6ff;
-          color: #1d4ed8;
-          padding: 12px 18px;
-          border-radius: 14px;
-          font-weight: 800;
-          font-size: 15px;
-        }
-
-        .workflow-arrow {
-          color: #64748b;
           font-size: 18px;
           font-weight: 900;
+          flex-shrink: 0;
+        }
+
+        .status-description {
+          margin: 18px 0 0;
+          color: #475569;
+          line-height: 1.75;
+          font-size: 16px;
         }
 
         @media (max-width: 1100px) {
@@ -330,7 +310,6 @@ export default function DashboardPage() {
           }
 
           .intro-card,
-          .workflow-card,
           .status-card {
             border-radius: 20px;
           }
@@ -352,15 +331,16 @@ export default function DashboardPage() {
           }
 
           .status-card {
-            padding: 20px 16px;
+            padding: 22px 16px;
+            min-height: 140px;
           }
 
-          .workflow-card {
-            padding: 20px 16px;
+          .status-main h2 {
+            font-size: 28px;
           }
 
-          .workflow-title {
-            font-size: 22px;
+          .status-description {
+            font-size: 15px;
           }
         }
       `}</style>
