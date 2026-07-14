@@ -3,113 +3,114 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import {
-  Calculator,
   GraduationCap,
   Calendar,
+  BookOpen,
   FileText,
-  Star,
-  Plus,
-  Minus,
 } from "lucide-react";
 
 export default function HeroCalculator() {
 
-  const [pages, setPages] = useState(1);
+  const [workType, setWorkType] = useState<"pages" | "words">("pages");
+
+  const [academicLevel, setAcademicLevel] = useState("");
+
+  const [deadline, setDeadline] = useState("");
+
+  const [spacing, setSpacing] = useState("Double");
+
+  const [quantity, setQuantity] = useState("");
 
   return (
+
     <motion.div
-      initial={{ opacity: 0, x: 60 }}
+      initial={{
+        opacity: 0,
+        x: 60,
+      }}
       animate={{
         opacity: 1,
         x: 0,
-        y: [0, -8, 0],
       }}
       transition={{
-        opacity: {
-          duration: 0.7,
-        },
-        x: {
-          duration: 0.7,
-        },
-        y: {
-          duration: 4,
-          repeat: Infinity,
-          ease: "easeInOut",
-        },
+        duration: 0.7,
       }}
-      className="relative pt-16"
+      className="relative"
     >
 
-      
-
-      
-
-      {/* Calculator Card */}
-
       <motion.div
-        initial={{
-          opacity: 0,
-          y: 40,
-        }}
-        whileInView={{
-          opacity: 1,
-          y: 0,
-        }}
-        viewport={{
-          once: true,
+        whileHover={{
+          y: -4,
         }}
         transition={{
-          duration: 0.6,
+          duration: 0.25,
         }}
-        className="rounded-[32px] border border-slate-200 bg-white p-8 shadow-2xl"
+        className="card p-8"
       >
 
-        <div className="flex items-center gap-3">
+        {/* Heading */}
 
-          <Calculator
-            size={34}
-            className="text-blue-600"
-          />
+        <div>
 
-          <h2 className="text-3xl font-bold text-slate-900">
+          <h2 className="card-title text-3xl">
 
             Calculate Your Price
 
           </h2>
 
+          <p className="section-subtitle mt-3 leading-7">
+
+            Receive an instant quotation based on your academic level,
+            deadline and work size before placing your order.
+
+          </p>
+
         </div>
-
-        <p className="mt-3 text-slate-500">
-
-          Get an instant estimate before placing your order.
-
-        </p>
 
         {/* Academic Level */}
 
         <div className="mt-8">
 
-          <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
+          <label className="mb-2 flex items-center gap-2 text-sm font-semibold">
 
-            <GraduationCap size={18} />
+            <GraduationCap
+              size={18}
+              className="text-blue-600"
+            />
 
             Academic Level
 
           </label>
 
-          <select className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none transition focus:border-blue-500">
+          <select
+            value={academicLevel}
+            onChange={(e) => setAcademicLevel(e.target.value)}
+            className="select"
+          >
 
-            <option>Choose Academic Level</option>
+            <option value="">
+              Select Academic Level
+            </option>
 
-            <option>High School</option>
+            <option>
+              High School
+            </option>
 
-            <option>College</option>
+            <option>
+              College
+            </option>
 
-            <option>University</option>
+            <option>
+              Undergraduate
+            </option>
 
-            <option>Masters</option>
+            <option>
+              Masters
+            </option>
 
-            <option>PhD</option>
+            <option>
+              PhD
+            </option>
 
           </select>
 
@@ -119,9 +120,12 @@ export default function HeroCalculator() {
 
         <div className="mt-6">
 
-          <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
+          <label className="mb-2 flex items-center gap-2 text-sm font-semibold">
 
-            <Calendar size={18} />
+            <Calendar
+              size={18}
+              className="text-blue-600"
+            />
 
             Deadline
 
@@ -129,245 +133,251 @@ export default function HeroCalculator() {
 
           <input
             type="date"
-            className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none transition focus:border-blue-500"
+            value={deadline}
+            onChange={(e) => setDeadline(e.target.value)}
+            className="input"
           />
 
         </div>
 
-        {/* Number of Pages */}
+        {/* Work Size */}
 
-        <div className="mt-6">
+        <div className="card mt-8 rounded-2xl bg-slate-50/70 p-6 dark:bg-slate-800/40">
 
-          <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
+          <div className="flex items-center gap-2">
 
-            <FileText size={18} />
-
-            Number of Pages
-
-          </label>
-
-          <div className="flex items-center gap-4">
-
-            <button
-              onClick={() => pages > 1 && setPages(pages - 1)}
-              className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 transition hover:bg-blue-100"
-            >
-
-              <Minus size={20} />
-
-            </button>
-
-            <input
-              readOnly
-              value={pages}
-              className="h-12 flex-1 rounded-xl border border-slate-200 text-center font-bold"
+            <BookOpen
+              size={20}
+              className="text-blue-600"
             />
 
+            <h3 className="card-title text-lg">
+
+              Work Size
+
+            </h3>
+
+          </div>
+
+          <p className="card-text mt-2 text-sm">
+
+            Choose whether your assignment will be measured
+            in pages or words.
+
+          </p>
+
+          {/* Toggle */}
+
+          <div className="mt-6 grid grid-cols-2 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+
             <button
-              onClick={() => setPages(pages + 1)}
-              className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 transition hover:bg-blue-100"
+              type="button"
+              onClick={() => setWorkType("pages")}
+              className={`py-3 text-sm font-semibold transition-all duration-300 ${
+                workType === "pages"
+                  ? "bg-blue-600 text-white"
+                  : "bg-white text-slate-700 hover:bg-slate-100 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+              }`}
             >
 
-              <Plus size={20} />
+              Pages
 
             </button>
+
+            <button
+              type="button"
+              onClick={() => setWorkType("words")}
+              className={`py-3 text-sm font-semibold transition-all duration-300 ${
+                workType === "words"
+                  ? "bg-blue-600 text-white"
+                  : "bg-white text-slate-700 hover:bg-slate-100 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+              }`}
+            >
+
+              Words
+
+            </button>
+
+          </div>
+
+          {/* Spacing */}
+
+          <div className="mt-6">
+
+            <label className="mb-2 text-sm font-semibold">
+
+              Spacing
+
+            </label>
+
+            <select
+              value={spacing}
+              onChange={(e) => setSpacing(e.target.value)}
+              className="select"
+            >
+
+              <option>Double</option>
+
+              <option>1.5 Spacing</option>
+
+              <option>Single</option>
+
+            </select>
+
+          </div>
+
+          {/* Quantity */}
+
+          <div className="mt-6">
+
+            <label className="mb-2 flex items-center gap-2 text-sm font-semibold">
+
+              <FileText
+                size={18}
+                className="text-blue-600"
+              />
+
+              {workType === "pages"
+                ? "Number of Pages"
+                : "Number of Words"}
+
+            </label>
+
+            <input
+              type="number"
+              min="1"
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+              placeholder={
+                workType === "pages"
+                  ? "Enter number of pages"
+                  : "Enter number of words"
+              }
+              className="input"
+            />
+
+            {/* Live Conversion */}
+
+            <motion.div
+              animate={{
+                opacity: [0.7, 1, 0.7],
+              }}
+              transition={{
+                repeat: Infinity,
+                duration: 3,
+              }}
+              className="mt-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 dark:border-blue-800 dark:bg-blue-950/40"
+            >
+
+              <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
+
+                {quantity === ""
+                  ? workType === "pages"
+                    ? "1 Page ≈ 275 Words (Double Spacing)"
+                    : "275 Words ≈ 1 Page (Double Spacing)"
+                  : workType === "pages"
+                  ? `≈ ${
+                      spacing === "Double"
+                        ? Number(quantity) * 275
+                        : spacing === "1.5 Spacing"
+                        ? Number(quantity) * 365
+                        : Number(quantity) * 550
+                    } Words`
+                  : `≈ ${
+                      spacing === "Double"
+                        ? (Number(quantity) / 275).toFixed(1)
+                        : spacing === "1.5 Spacing"
+                        ? (Number(quantity) / 365).toFixed(1)
+                        : (Number(quantity) / 550).toFixed(1)
+                    } Pages`}
+
+              </p>
+
+            </motion.div>
 
           </div>
 
         </div>
 
         {/* Estimated Price */}
-
-        <motion.div
+                <motion.div
           whileHover={{
             scale: 1.02,
           }}
-          className="mt-8 rounded-2xl border border-dashed border-blue-300 bg-blue-50 p-6"
+          transition={{
+            duration: 0.25,
+          }}
+          className="card mt-8 border-blue-200 bg-gradient-to-br from-blue-50 via-white to-slate-50 p-7 dark:border-blue-900 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950"
         >
 
-          <h3 className="text-lg font-bold text-slate-900">
+          <div className="flex items-center justify-between">
 
-            Estimated Price
+            <div>
 
-          </h3>
+              <h3 className="card-title">
 
-          <p className="mt-2 text-slate-500">
+                Estimated Price
 
-            Your quotation will automatically appear here once the pricing engine is connected.
+              </h3>
 
-          </p>
+              <p className="card-text mt-2 text-sm">
 
-          <div className="mt-6 rounded-2xl bg-white p-6 text-center shadow-sm">
+                Your quotation will automatically appear here once the
+                pricing engine is connected.
 
-            <div className="text-5xl font-extrabold text-blue-600">
+              </p>
+
+            </div>
+
+          </div>
+
+          <motion.div
+            animate={{
+              opacity: [0.6, 1, 0.6],
+            }}
+            transition={{
+              repeat: Infinity,
+              duration: 2.5,
+            }}
+            className="card mt-6 rounded-2xl p-7 text-center"
+          >
+
+            <div className="text-5xl font-black tracking-wide text-blue-600 dark:text-blue-400">
 
               ---
 
             </div>
 
-          </div>
+            <p className="card-text mt-3 text-sm">
+
+              Pricing engine coming SOON!!
+
+            </p>
+
+          </motion.div>
 
         </motion.div>
 
-        <button className="btn-primary mt-8 w-full py-4 text-lg">
+        {/* Calculate Button */}
+
+        <motion.button
+          whileHover={{
+            scale: 1.02,
+          }}
+          whileTap={{
+            scale: 0.98,
+          }}
+          className="btn-primary mt-8 w-full py-4 text-lg"
+        >
 
           Calculate Price
 
-        </button>
-                {/* Completed Orders */}
-
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.2 }}
-          className="mt-10 flex justify-center"
-        >
-          <div className="rounded-2xl border border-slate-200 bg-white px-10 py-6 text-center shadow-lg">
-
-            <div className="text-4xl font-extrabold text-green-600">
-              18,000+
-            </div>
-
-            <p className="mt-2 text-slate-500">
-              Completed Orders
-            </p>
-
-          </div>
-        </motion.div>
+        </motion.button>
 
       </motion.div>
 
-      {/* Trust Cards */}
-
-      <div className="mt-8 grid grid-cols-2 gap-4">
-
-        <motion.div
-          initial={{ opacity: 0, y: 25 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.1 }}
-          whileHover={{
-            y: -8,
-            scale: 1.03,
-          }}
-          className="rounded-2xl border border-slate-200 bg-white p-5 shadow-lg"
-        >
-
-          <GraduationCap
-            size={34}
-            className="text-blue-600"
-          />
-
-          <h3 className="mt-4 font-bold text-slate-900">
-
-            Human Experts
-
-          </h3>
-
-          <p className="mt-2 text-sm leading-6 text-slate-500">
-
-            Qualified academic professionals across more than 100 subjects.
-
-          </p>
-
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 25 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.2 }}
-          whileHover={{
-            y: -8,
-            scale: 1.03,
-          }}
-          className="rounded-2xl border border-slate-200 bg-white p-5 shadow-lg"
-        >
-
-          <FileText
-            size={34}
-            className="text-green-600"
-          />
-
-          <h3 className="mt-4 font-bold text-slate-900">
-
-            Turnitin Ready
-
-          </h3>
-
-          <p className="mt-2 text-sm leading-6 text-slate-500">
-
-            Every assignment is written from scratch with originality reports available.
-
-          </p>
-
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 25 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.3 }}
-          whileHover={{
-            y: -8,
-            scale: 1.03,
-          }}
-          className="rounded-2xl border border-slate-200 bg-white p-5 shadow-lg"
-        >
-
-          <Star
-            size={34}
-            className="fill-yellow-400 text-yellow-400"
-          />
-
-          <h3 className="mt-4 font-bold text-slate-900">
-
-            4.9 Student Rating
-
-          </h3>
-
-          <p className="mt-2 text-sm leading-6 text-slate-500">
-
-            Rated highly by thousands of students from universities worldwide.
-
-          </p>
-
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 25 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.4 }}
-          whileHover={{
-            y: -8,
-            scale: 1.03,
-          }}
-          className="rounded-2xl border border-slate-200 bg-white p-5 shadow-lg"
-        >
-
-          <Calendar
-            size={34}
-            className="text-orange-500"
-          />
-
-          <h3 className="mt-4 font-bold text-slate-900">
-
-            On-Time Delivery
-
-          </h3>
-
-          <p className="mt-2 text-sm leading-6 text-slate-500">
-
-            98% of assignments are delivered before the agreed deadline.
-
-          </p>
-
-        </motion.div>
-
-      </div>
-
     </motion.div>
+
   );
+
 }
