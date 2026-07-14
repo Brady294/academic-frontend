@@ -40,41 +40,9 @@ export default function HeroCalculator() {
       className="relative pt-16"
     >
 
-      {/* Floating Rating */}
+      
 
-      <motion.div
-        initial={{
-          opacity: 0,
-          scale: 0.8,
-        }}
-        animate={{
-          opacity: 1,
-          scale: 1,
-        }}
-        transition={{
-          delay: 0.5,
-        }}
-        className="absolute top-6 right-8 z-20 rounded-2xl border border-slate-200 bg-white px-6 py-5 shadow-xl"
-      >
-
-        <Star
-          size={28}
-          className="mx-auto mb-2 fill-yellow-400 text-yellow-400"
-        />
-
-        <h3 className="text-center text-3xl font-extrabold text-blue-600">
-
-          4.9
-
-        </h3>
-
-        <p className="text-center text-sm text-slate-500">
-
-          Student Rating
-
-        </p>
-
-      </motion.div>
+      
 
       {/* Calculator Card */}
 
