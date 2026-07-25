@@ -1,7 +1,15 @@
+"use client";
+
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
+
 export default function DashboardPage() {
   return (
-    <main className="min-h-screen flex items-center justify-center">
-      <h1 className="text-3xl font-bold">Client Dashboard</h1>
-    </main>
+    <ProtectedRoute>
+      <div className="p-10">
+        <h1 className="text-3xl font-bold">
+          Client Dashboard
+        </h1>
+      </div>
+    </ProtectedRoute>
   );
 }

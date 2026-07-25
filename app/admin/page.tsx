@@ -1,7 +1,15 @@
+"use client";
+
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
+
 export default function AdminPage() {
   return (
-    <main className="min-h-screen flex items-center justify-center">
-      <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-    </main>
+    <ProtectedRoute adminOnly>
+      <div className="p-10">
+        <h1 className="text-3xl font-bold">
+          Admin Dashboard
+        </h1>
+      </div>
+    </ProtectedRoute>
   );
 }

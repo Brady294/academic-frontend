@@ -2,37 +2,80 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+
 import TextInput from "../ui/TextInput";
 import PasswordInput from "./PasswordInput";
 import AuthDivider from "./AuthDivider";
 import SocialLogin from "./SocialLogin";
 import Spinner from "../ui/Spinner";
 
+import { useAuth } from "@/hooks/useAuth";
+
 export default function LoginForm() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(false);
+  const router = useRouter();
+  const { login } = useAuth();
+
   const [loading, setLoading] = useState(false);
+
+  const [form, setForm] = useState({
+    email: "",
+    password: "",
+    remember: false,
+  });
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const { name, value, type, checked } = e.target;
+
+    setForm((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
 
   const handleSubmit = async (
     e: React.FormEvent<HTMLFormElement>
   ) => {
     e.preventDefault();
 
+    if (loading) return;
+
     setLoading(true);
 
     try {
-      // Backend integration coming next
-      console.log({
-        email,
-        password,
-        rememberMe,
+      await login({
+        email: form.email,
+        password: form.password,
       });
 
-      // Simulate API request
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-    } catch (error) {
-      console.error(error);
+      const user = JSON.parse(
+        localStorage.getItem("user") || "{}"
+      );
+
+      if (user.is_admin) {
+        router.replace("/admin");
+      } else {
+        router.replace("/dashboard");
+      }
+    } catch (error: any) {
+      if (
+        error.response?.data?.requiresVerification
+      ) {
+        router.push(
+          `/verify-email?email=${encodeURIComponent(
+            error.response.data.email
+          )}`
+        );
+
+        return;
+      }
+
+      alert(
+        error.response?.data?.error ||
+          "Login failed."
+      );
     } finally {
       setLoading(false);
     }
@@ -40,16 +83,19 @@ export default function LoginForm() {
 
   return (
     <>
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-5"
+      >
         <TextInput
           id="email"
           name="email"
-          label="Email Address"
           type="email"
+          label="Email Address"
           placeholder="john@example.com"
           autoComplete="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          value={form.email}
+          onChange={handleChange}
           required
         />
 
@@ -57,27 +103,27 @@ export default function LoginForm() {
           id="password"
           name="password"
           label="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          value={form.password}
+          onChange={handleChange}
           autoComplete="current-password"
           required
         />
 
         <div className="flex items-center justify-between">
-          <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+          <label className="flex items-center gap-2 text-sm">
             <input
               type="checkbox"
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-              className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+              name="remember"
+              checked={form.remember}
+              onChange={handleChange}
             />
 
-            Remember Me
+            Remember me
           </label>
 
           <Link
             href="/forgot-password"
-            className="text-sm font-medium text-blue-600 transition hover:text-blue-700"
+            className="text-sm font-medium text-blue-600 hover:text-blue-700"
           >
             Forgot Password?
           </Link>
@@ -86,9 +132,16 @@ export default function LoginForm() {
         <button
           type="submit"
           disabled={loading}
-          className="flex w-full items-center justify-center rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white transition-all duration-200 hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/30 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex w-full items-center justify-center rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
         >
-          {loading ? <Spinner /> : "Sign In"}
+          {loading ? (
+            <>
+              <Spinner className="mr-2" />
+              Signing In...
+            </>
+          ) : (
+            "Sign In"
+          )}
         </button>
       </form>
 

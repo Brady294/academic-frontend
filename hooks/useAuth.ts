@@ -1,7 +1,3 @@
-"use client";
-
 import { useAuthContext } from "@/contexts/AuthContext";
 
-export default function useAuth() {
-  return useAuthContext();
-}
+export const useAuth = () => useAuthContext();

@@ -42,7 +42,15 @@ export default function RegisterForm() {
   ) => {
     e.preventDefault();
 
-    if (loading) return;
+    if (!form.agree) {
+      alert("You must agree to the Terms and Privacy Policy.");
+      return;
+    }
+
+    if (form.password !== form.confirmPassword) {
+      alert("Passwords do not match.");
+      return;
+    }
 
     setLoading(true);
 
@@ -60,7 +68,7 @@ export default function RegisterForm() {
       );
     } catch (error: any) {
       alert(
-        error?.response?.data?.error ||
+        error.response?.data?.error ||
           "Registration failed. Please try again."
       );
     } finally {
@@ -131,7 +139,6 @@ export default function RegisterForm() {
             name="agree"
             checked={form.agree}
             onChange={handleChange}
-            required
             className="mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
           />
 
@@ -160,7 +167,7 @@ export default function RegisterForm() {
         >
           {loading ? (
             <>
-              <Spinner className="mr-2 h-5 w-5" />
+              <Spinner className="mr-2" />
               Creating Account...
             </>
           ) : (

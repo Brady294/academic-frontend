@@ -1,7 +1,15 @@
-export default function SubmitAssignmentPage() {
+"use client";
+
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
+
+export default function SubmitPage() {
   return (
-    <main className="min-h-screen flex items-center justify-center">
-      <h1 className="text-3xl font-bold">Submit Assignment</h1>
-    </main>
+    <ProtectedRoute>
+      <div className="p-10">
+        <h1 className="text-3xl font-bold">
+          Submit Assignment
+        </h1>
+      </div>
+    </ProtectedRoute>
   );
 }

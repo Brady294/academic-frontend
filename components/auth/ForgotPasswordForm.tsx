@@ -1,18 +1,50 @@
 "use client";
 
+import { AxiosError } from "axios";
 import { useState } from "react";
 import Link from "next/link";
+
 import TextInput from "../ui/TextInput";
+import Spinner from "../ui/Spinner";
+
+import { forgotPassword } from "@/services/auth";
 
 export default function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const [loading, setLoading] = useState(false);
+
+  const [success, setSuccess] = useState("");
+
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (
+    e: React.FormEvent<HTMLFormElement>
+  ) => {
     e.preventDefault();
 
-    console.log(email);
+    if (loading) return;
 
-    // Backend integration later
+    setLoading(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      const response = await forgotPassword(email);
+
+      setSuccess(response.message);
+
+      setEmail("");
+    } catch (err) {
+      const error = err as AxiosError<{ error: string }>;
+
+      setError(
+        error.response?.data?.error ??
+          "Something went wrong."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -30,11 +62,31 @@ export default function ForgotPasswordForm() {
           required
         />
 
+        {success && (
+          <p className="text-sm text-green-600">
+            {success}
+          </p>
+        )}
+
+        {error && (
+          <p className="text-sm text-red-600">
+            {error}
+          </p>
+        )}
+
         <button
           type="submit"
-          className="w-full rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-700"
+          disabled={loading}
+          className="flex w-full items-center justify-center rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:opacity-70"
         >
-          Send Reset Link
+          {loading ? (
+            <>
+              <Spinner className="mr-2" />
+              Sending...
+            </>
+          ) : (
+            "Send Reset Link"
+          )}
         </button>
       </form>
 

@@ -8,49 +8,85 @@ import {
   ReactNode,
 } from "react";
 
-export interface User {
-  id: number;
-  firstName: string;
-  lastName: string;
-  email: string;
-  role: "client" | "admin";
-}
+import {
+  LoginData,
+  User,
+} from "@/types/auth";
+
+import {
+  loginUser,
+  logoutUser,
+} from "@/services/auth";
+
+import {
+  saveAuthSession,
+  clearAuthSession,
+  getStoredUser,
+} from "@/utils/authStorage";
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (user: User) => void;
-  logout: () => void;
+  isAuthenticated: boolean;
+  login: (
+    data: LoginData
+  ) => Promise<void>;
+  logout: () => Promise<void>;
+  setUser: (
+    user: User | null
+  ) => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<
+  AuthContextType | undefined
+>(undefined);
 
 export function AuthProvider({
   children,
 }: {
   children: ReactNode;
 }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] =
+    useState<User | null>(null);
+
+  const [loading, setLoading] =
+    useState(true);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
+    const storedUser =
+      getStoredUser();
 
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      setUser(storedUser);
     }
 
     setLoading(false);
   }, []);
 
-  const login = (user: User) => {
-    localStorage.setItem("user", JSON.stringify(user));
-    setUser(user);
+  const login = async (
+    data: LoginData
+  ) => {
+    const response =
+      await loginUser(data);
+
+    saveAuthSession(
+      response.accessToken,
+      response.refreshToken,
+      response.user
+    );
+
+    setUser(response.user);
   };
 
-  const logout = () => {
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
+  const logout = async () => {
+    try {
+      await logoutUser();
+    } catch (err) {
+      console.error(err);
+    }
+
+    clearAuthSession();
+
     setUser(null);
   };
 
@@ -61,6 +97,8 @@ export function AuthProvider({
         loading,
         login,
         logout,
+        setUser,
+        isAuthenticated: !!user,
       }}
     >
       {children}
@@ -69,7 +107,8 @@ export function AuthProvider({
 }
 
 export function useAuthContext() {
-  const context = useContext(AuthContext);
+  const context =
+    useContext(AuthContext);
 
   if (!context) {
     throw new Error(
