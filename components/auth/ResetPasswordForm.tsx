@@ -3,29 +3,28 @@
 import { AxiosError } from "axios";
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 import PasswordInput from "./PasswordInput";
 import Spinner from "../ui/Spinner";
 
 import { resetPassword } from "@/services/auth";
 
-export default function ResetPasswordForm() {
+interface ResetPasswordFormProps {
+  token: string;
+}
+
+export default function ResetPasswordForm({
+  token,
+}: ResetPasswordFormProps) {
   const router = useRouter();
 
-  const searchParams = useSearchParams();
-
-  const token = searchParams.get("token") || "";
-
   const [password, setPassword] = useState("");
-
   const [confirmPassword, setConfirmPassword] =
     useState("");
 
   const [loading, setLoading] = useState(false);
-
   const [success, setSuccess] = useState("");
-
   const [error, setError] = useState("");
 
   const handleSubmit = async (
