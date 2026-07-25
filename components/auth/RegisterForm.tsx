@@ -2,12 +2,21 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+
 import TextInput from "../ui/TextInput";
 import PasswordInput from "./PasswordInput";
 import AuthDivider from "./AuthDivider";
 import SocialLogin from "./SocialLogin";
+import Spinner from "../ui/Spinner";
+
+import { registerUser } from "@/services/auth";
 
 export default function RegisterForm() {
+  const router = useRouter();
+
+  const [loading, setLoading] = useState(false);
+
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -33,17 +42,36 @@ export default function RegisterForm() {
   ) => {
     e.preventDefault();
 
-    console.log(form);
+    if (loading) return;
 
-    // Backend integration next
+    setLoading(true);
+
+    try {
+      const response = await registerUser({
+        firstName: form.firstName,
+        lastName: form.lastName,
+        email: form.email,
+        password: form.password,
+        confirmPassword: form.confirmPassword,
+      });
+
+      router.push(
+        `/verify-email?email=${encodeURIComponent(response.email)}`
+      );
+    } catch (error: any) {
+      alert(
+        error?.response?.data?.error ||
+          "Registration failed. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <>
       <form onSubmit={handleSubmit} className="space-y-5">
-
         <div className="grid gap-5 md:grid-cols-2">
-
           <TextInput
             id="firstName"
             name="firstName"
@@ -63,7 +91,6 @@ export default function RegisterForm() {
             onChange={handleChange}
             required
           />
-
         </div>
 
         <TextInput
@@ -99,7 +126,6 @@ export default function RegisterForm() {
         />
 
         <label className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400">
-
           <input
             type="checkbox"
             name="agree"
@@ -125,16 +151,22 @@ export default function RegisterForm() {
               Privacy Policy
             </Link>
           </span>
-
         </label>
 
         <button
           type="submit"
-          className="w-full rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-700"
+          disabled={loading}
+          className="flex w-full items-center justify-center rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
         >
-          Create Account
+          {loading ? (
+            <>
+              <Spinner className="mr-2 h-5 w-5" />
+              Creating Account...
+            </>
+          ) : (
+            "Create Account"
+          )}
         </button>
-
       </form>
 
       <AuthDivider />
