@@ -3,6 +3,7 @@ import { ReactNode } from "react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 
 import { DashboardProvider } from "@/contexts/DashboardContext";
+import { OrderProvider } from "@/contexts/OrderContext";
 
 export default function Layout({
   children,
@@ -11,7 +12,11 @@ export default function Layout({
 }) {
   return (
     <DashboardProvider>
-      <DashboardLayout>{children}</DashboardLayout>
+      <OrderProvider>
+        <DashboardLayout>
+          {children}
+        </DashboardLayout>
+      </OrderProvider>
     </DashboardProvider>
   );
 }
