@@ -2,10 +2,13 @@ import axios from "@/lib/axios";
 
 export interface UploadedFile {
   id: number;
-  filename: string;
-  original_name: string;
+  order_id: number;
+
+  file_name: string;
+  file_path: string;
   file_size: number;
-  created_at: string;
+
+  uploaded_at: string;
 }
 
 async function upload(
@@ -26,7 +29,7 @@ async function upload(
     }
   );
 
-  return data;
+  return data.file ?? data;
 }
 
 async function getOrderFiles(
@@ -41,7 +44,7 @@ async function getOrderFiles(
 
 async function deleteOrderFile(
   id: number | string
-) {
+): Promise<{ message: string }> {
   const { data } = await axios.delete(
     `/uploads/file/${id}`
   );
@@ -57,7 +60,7 @@ export {
   deleteOrderFile,
 };
 
-/* Default object for existing pages */
+/* Default export */
 
 const uploadService = {
   upload,
