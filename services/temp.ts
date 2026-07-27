@@ -1,35 +1,33 @@
 import axios from "@/lib/axios";
 
-const settingsService = {
+const profileService = {
+  async getProfile() {
+    const { data } = await axios.get(
+      "/profile/me"
+    );
 
-    async getSettings(){
+    return data;
+  },
 
-        const {data}=await axios.get(
-            "/settings"
-        );
+  async updateProfile(profile: any) {
+    const { data } = await axios.put(
+      "/profile/me",
+      profile
+    );
 
-        return data;
+    return data;
+  },
 
-    },
+  async updateAvatar(avatar: string) {
+    const { data } = await axios.put(
+      "/profile/avatar",
+      {
+        avatar,
+      }
+    );
 
-    async changePassword(password:string){
-
-        const {data}=await axios.put(
-
-            "/settings/password",
-
-            {
-
-                password
-
-            }
-
-        );
-
-        return data;
-
-    }
-
+    return data;
+  },
 };
 
-export default settingsService;
+export default profileService;
