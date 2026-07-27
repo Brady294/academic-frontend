@@ -8,115 +8,88 @@ import {
   ReactNode,
 } from "react";
 
-import {
-  createOrder,
-  deleteOrder,
-  getOrders,
-  updateOrder,
-  OrderData,
-} from "@/services/orderService";
-
-interface Order {
-  id: number;
-  user_id: number;
-  title: string;
-  subject: string;
-  service_type: string;
-  academic_level: string;
-  pages: number;
-  spacing: string;
-  citation_style: string;
-  deadline: string;
-  instructions: string;
-  budget: number;
-  status: string;
-  created_at: string;
-  updated_at: string;
-}
+import orderService from "@/services/orderService";
+import { Order } from "@/types/order";
 
 interface OrderContextType {
   orders: Order[];
   loading: boolean;
+  selectedOrder: Order | null;
 
-  fetchOrders: () => Promise<void>;
-
-  addOrder: (data: OrderData) => Promise<any>;
-
-  editOrder: (
-    id: number,
-    data: Partial<OrderData>
-  ) => Promise<any>;
-
-  removeOrder: (
-    id: number
-  ) => Promise<any>;
+  refreshOrders: () => Promise<void>;
+  getOrder: (id: number | string) => Promise<void>;
+  createOrder: (data: any) => Promise<any>;
+  updateOrder: (id: number | string, data: any) => Promise<any>;
+  deleteOrder: (id: number | string) => Promise<void>;
 }
 
-const OrderContext =
-  createContext<OrderContextType | null>(
-    null
-  );
+const OrderContext = createContext<OrderContextType>(
+  {} as OrderContextType
+);
 
 export function OrderProvider({
   children,
 }: {
   children: ReactNode;
 }) {
-  const [orders, setOrders] = useState<
-    Order[]
-  >([]);
+  const [orders, setOrders] = useState<Order[]>([]);
 
-  const [loading, setLoading] =
-    useState(true);
+  const [selectedOrder, setSelectedOrder] =
+    useState<Order | null>(null);
 
-  async function fetchOrders() {
+  const [loading, setLoading] = useState(true);
+
+  async function refreshOrders() {
     try {
-      const data = await getOrders();
+      setLoading(true);
+
+      const data = await orderService.getOrders();
 
       setOrders(data);
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error(error);
     } finally {
       setLoading(false);
     }
   }
 
-  async function addOrder(
-    data: OrderData
-  ) {
-    const response =
-      await createOrder(data);
+  async function getOrder(id: number | string) {
+    try {
+      const order = await orderService.getOrder(id);
 
-    await fetchOrders();
+      setSelectedOrder(order);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async function createOrder(data: any) {
+    const response = await orderService.createOrder(data);
+
+    await refreshOrders();
 
     return response;
   }
 
-  async function editOrder(
-    id: number,
-    data: Partial<OrderData>
+  async function updateOrder(
+    id: number | string,
+    data: any
   ) {
-    const response =
-      await updateOrder(id, data);
+    const response = await orderService.updateOrder(id, data);
 
-    await fetchOrders();
+    await refreshOrders();
 
     return response;
   }
 
-  async function removeOrder(
-    id: number
-  ) {
-    const response =
-      await deleteOrder(id);
+  async function deleteOrder(id: number | string) {
+    await orderService.deleteOrder(id);
 
-    await fetchOrders();
-
-    return response;
+    await refreshOrders();
   }
 
   useEffect(() => {
-    fetchOrders();
+    refreshOrders();
   }, []);
 
   return (
@@ -124,10 +97,12 @@ export function OrderProvider({
       value={{
         orders,
         loading,
-        fetchOrders,
-        addOrder,
-        editOrder,
-        removeOrder,
+        selectedOrder,
+        refreshOrders,
+        getOrder,
+        createOrder,
+        updateOrder,
+        deleteOrder,
       }}
     >
       {children}
@@ -136,14 +111,5 @@ export function OrderProvider({
 }
 
 export function useOrders() {
-  const context =
-    useContext(OrderContext);
-
-  if (!context) {
-    throw new Error(
-      "useOrders must be used inside OrderProvider."
-    );
-  }
-
-  return context;
+  return useContext(OrderContext);
 }

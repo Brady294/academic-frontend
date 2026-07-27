@@ -2,19 +2,25 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+
+import FileUpload from "@/components/orders/FileUpload";
+import uploadService from "@/services/uploadService";
 import { useOrders } from "@/contexts/OrderContext";
 
 export default function NewOrderPage() {
   const router = useRouter();
-  const { addOrder } = useOrders();
+
+  const { createOrder } = useOrders();
 
   const [loading, setLoading] = useState(false);
 
-  const [formData, setFormData] = useState({
+  const [files, setFiles] = useState<File[]>([]);
+
+  const [form, setForm] = useState({
     title: "",
     subject: "",
-    service_type: "Essay",
-    academic_level: "Undergraduate",
+    service_type: "",
+    academic_level: "",
     pages: 1,
     spacing: "Double",
     citation_style: "APA",
@@ -23,58 +29,56 @@ export default function NewOrderPage() {
     budget: 0,
   });
 
-  const handleChange = (
+  function handleChange(
     e: React.ChangeEvent<
-      HTMLInputElement |
-      HTMLTextAreaElement |
-      HTMLSelectElement
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     >
-  ) => {
-    const { name, value } = e.target;
+  ) {
+    const { name, value, type } = e.target;
 
-    setFormData((prev) => ({
+    setForm((prev) => ({
       ...prev,
-      [name]:
-        name === "pages" || name === "budget"
-          ? Number(value)
-          : value,
+      [name]: type === "number" ? Number(value) : value,
     }));
-  };
+  }
 
-  const handleSubmit = async (
-    e: React.FormEvent
-  ) => {
+  async function handleSubmit(
+    e: React.FormEvent<HTMLFormElement>
+  ) {
     e.preventDefault();
 
     try {
       setLoading(true);
 
-      await addOrder(formData);
+      const response = await createOrder(form);
 
-      alert("Order created successfully!");
+      const orderId = response.order.id;
 
-      router.push("/dashboard/orders");
-    } catch (err: any) {
-      alert(
-        err?.response?.data?.message ||
-          "Failed to create order."
-      );
+      if (files.length > 0) {
+        for (const file of files) {
+          await uploadService.upload(orderId, file);
+        }
+      }
+
+      router.push(`/dashboard/orders/${orderId}`);
+    } catch (error) {
+      console.error(error);
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="mx-auto max-w-6xl">
 
-      <div className="mb-8">
+      <div className="mb-10">
 
-        <h1 className="text-3xl font-bold">
+        <h1 className="text-4xl font-bold">
           Place New Order
         </h1>
 
-        <p className="text-gray-500 mt-2">
-          Fill in the assignment details below.
+        <p className="mt-2 text-gray-500">
+          Complete the form below to submit your assignment.
         </p>
 
       </div>
@@ -84,76 +88,119 @@ export default function NewOrderPage() {
         className="space-y-8"
       >
 
-        <div className="bg-white rounded-2xl shadow border p-8">
+        {/* Assignment Details */}
 
-          <div className="grid md:grid-cols-2 gap-6">
+        <section className="rounded-3xl border border-gray-200 bg-white p-8 shadow-sm">
+
+          <h2 className="mb-6 text-2xl font-bold">
+            Assignment Details
+          </h2>
+
+          <div className="grid gap-6">
 
             <div>
 
-              <label className="font-medium">
+              <label className="mb-2 block font-medium">
                 Assignment Title
               </label>
 
               <input
                 name="title"
-                required
-                value={formData.title}
+                value={form.title}
                 onChange={handleChange}
-                className="mt-2 w-full rounded-lg border p-3"
+                required
+                className="w-full rounded-xl border border-gray-300 p-4 outline-none focus:border-blue-500"
+                placeholder="Enter assignment title"
               />
 
             </div>
 
             <div>
 
-              <label className="font-medium">
+              <label className="mb-2 block font-medium">
                 Subject
               </label>
 
               <input
                 name="subject"
-                required
-                value={formData.subject}
+                value={form.subject}
                 onChange={handleChange}
-                className="mt-2 w-full rounded-lg border p-3"
+                required
+                className="w-full rounded-xl border border-gray-300 p-4 outline-none focus:border-blue-500"
+                placeholder="e.g Business Management"
               />
 
             </div>
 
             <div>
 
-              <label className="font-medium">
+              <label className="mb-2 block font-medium">
+                Instructions
+              </label>
+
+              <textarea
+                name="instructions"
+                rows={8}
+                value={form.instructions}
+                onChange={handleChange}
+                className="w-full rounded-xl border border-gray-300 p-4 outline-none focus:border-blue-500"
+                placeholder="Paste assignment instructions here..."
+              />
+
+            </div>
+
+          </div>
+
+        </section>
+
+        {/* Academic Details */}
+
+        <section className="rounded-3xl border border-gray-200 bg-white p-8 shadow-sm">
+
+          <h2 className="mb-6 text-2xl font-bold">
+            Academic Details
+          </h2>
+
+          <div className="grid gap-6 md:grid-cols-2">
+
+            <div>
+
+              <label className="mb-2 block font-medium">
                 Service Type
               </label>
 
               <select
                 name="service_type"
-                value={formData.service_type}
+                value={form.service_type}
                 onChange={handleChange}
-                className="mt-2 w-full rounded-lg border p-3"
+                required
+                className="w-full rounded-xl border border-gray-300 p-4"
               >
+                <option value="">Select Service</option>
                 <option>Essay</option>
                 <option>Research Paper</option>
-                <option>Dissertation</option>
                 <option>Case Study</option>
                 <option>Programming</option>
                 <option>Presentation</option>
+                <option>Dissertation</option>
               </select>
 
             </div>
 
             <div>
 
-              <label className="font-medium">
+              <label className="mb-2 block font-medium">
                 Academic Level
               </label>
 
               <select
                 name="academic_level"
-                value={formData.academic_level}
+                value={form.academic_level}
                 onChange={handleChange}
-                className="mt-2 w-full rounded-lg border p-3"
+                required
+                className="w-full rounded-xl border border-gray-300 p-4"
               >
+                <option value="">Select Level</option>
                 <option>High School</option>
                 <option>College</option>
                 <option>Undergraduate</option>
@@ -165,50 +212,50 @@ export default function NewOrderPage() {
 
             <div>
 
-              <label className="font-medium">
-                Pages
+              <label className="mb-2 block font-medium">
+                Number of Pages
               </label>
 
               <input
                 type="number"
                 min={1}
                 name="pages"
-                value={formData.pages}
+                value={form.pages}
                 onChange={handleChange}
-                className="mt-2 w-full rounded-lg border p-3"
+                className="w-full rounded-xl border border-gray-300 p-4"
               />
 
             </div>
 
             <div>
 
-              <label className="font-medium">
+              <label className="mb-2 block font-medium">
                 Spacing
               </label>
 
               <select
                 name="spacing"
-                value={formData.spacing}
+                value={form.spacing}
                 onChange={handleChange}
-                className="mt-2 w-full rounded-lg border p-3"
+                className="w-full rounded-xl border border-gray-300 p-4"
               >
-                <option>Single</option>
                 <option>Double</option>
+                <option>Single</option>
               </select>
 
             </div>
 
             <div>
 
-              <label className="font-medium">
+              <label className="mb-2 block font-medium">
                 Citation Style
               </label>
 
               <select
                 name="citation_style"
-                value={formData.citation_style}
+                value={form.citation_style}
                 onChange={handleChange}
-                className="mt-2 w-full rounded-lg border p-3"
+                className="w-full rounded-xl border border-gray-300 p-4"
               >
                 <option>APA</option>
                 <option>MLA</option>
@@ -221,67 +268,58 @@ export default function NewOrderPage() {
 
             <div>
 
-              <label className="font-medium">
+              <label className="mb-2 block font-medium">
                 Deadline
               </label>
 
               <input
                 type="datetime-local"
                 name="deadline"
-                required
-                value={formData.deadline}
+                value={form.deadline}
                 onChange={handleChange}
-                className="mt-2 w-full rounded-lg border p-3"
+                required
+                className="w-full rounded-xl border border-gray-300 p-4"
               />
 
             </div>
 
             <div className="md:col-span-2">
 
-              <label className="font-medium">
-                Budget ($)
+              <label className="mb-2 block font-medium">
+                Budget (Optional)
               </label>
 
               <input
                 type="number"
-                min={0}
                 name="budget"
-                value={formData.budget}
+                value={form.budget}
                 onChange={handleChange}
-                className="mt-2 w-full rounded-lg border p-3"
-              />
-
-            </div>
-
-            <div className="md:col-span-2">
-
-              <label className="font-medium">
-                Assignment Instructions
-              </label>
-
-              <textarea
-                rows={8}
-                name="instructions"
-                value={formData.instructions}
-                onChange={handleChange}
-                className="mt-2 w-full rounded-lg border p-3"
+                className="w-full rounded-xl border border-gray-300 p-4"
               />
 
             </div>
 
           </div>
 
-        </div>
+        </section>
+
+        {/* File Upload */}
+
+        <FileUpload
+          files={files}
+          setFiles={setFiles}
+        />
+
+        {/* Submit */}
 
         <div className="flex justify-end">
 
           <button
+            type="submit"
             disabled={loading}
-            className="bg-red-600 hover:bg-red-700 text-white rounded-lg px-8 py-3 font-semibold transition disabled:opacity-50"
+            className="rounded-2xl bg-blue-600 px-8 py-4 font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
           >
-            {loading
-              ? "Submitting..."
-              : "Submit Order"}
+            {loading ? "Submitting..." : "Submit Order"}
           </button>
 
         </div>

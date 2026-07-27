@@ -1,56 +1,35 @@
-import api from "@/lib/axios";
+import axios from "@/lib/axios";
 
-export interface UploadedFile {
-  id: number;
-  order_id: number;
-  file_name: string;
-  file_path: string;
-  file_size: number;
-  uploaded_at: string;
-}
+const uploadService = {
+  async upload(orderId: number | string, file: File) {
+    const formData = new FormData();
 
-export interface UploadResponse {
-  message: string;
-  file: UploadedFile;
-}
+    formData.append("file", file);
 
-export async function uploadOrderFile(
-  orderId: number,
-  file: File
-): Promise<UploadResponse> {
-  const formData = new FormData();
+    const response = await axios.post(
+      `/uploads/${orderId}`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
 
-  formData.append("file", file);
+    return response.data;
+  },
 
-  const response = await api.post(
-    `/uploads/${orderId}`,
-    formData,
-    {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    }
-  );
+  async getFiles(orderId: number | string) {
+    const response = await axios.get(`/uploads/${orderId}`);
 
-  return response.data;
-}
+    return response.data;
+  },
 
-export async function getOrderFiles(
-  orderId: number
-): Promise<UploadedFile[]> {
-  const response = await api.get(
-    `/uploads/${orderId}`
-  );
+  async deleteFile(id: number | string) {
+    const response = await axios.delete(`/uploads/file/${id}`);
 
-  return response.data;
-}
+    return response.data;
+  },
+};
 
-export async function deleteOrderFile(
-  fileId: number
-) {
-  const response = await api.delete(
-    `/uploads/file/${fileId}`
-  );
-
-  return response.data;
-}
+export default uploadService;

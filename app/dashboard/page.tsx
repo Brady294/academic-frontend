@@ -1,72 +1,25 @@
 "use client";
 
-import ProtectedRoute from "@/components/auth/ProtectedRoute";
-
-import UserWelcome from "@/components/dashboard/UserWelcome";
-import DashboardCard from "@/components/dashboard/DashboardCard";
+import DashboardHeader from "@/components/dashboard/DashboardHeader";
+import DashboardStats from "@/components/dashboard/DashboardStats";
+import QuickActions from "@/components/dashboard/QuickActions";
 import RecentOrders from "@/components/dashboard/RecentOrders";
-import Notifications from "@/components/dashboard/Notifications";
-
-import {
-  ClipboardList,
-  Clock3,
-  CheckCircle2,
-  DollarSign,
-} from "lucide-react";
+import UpcomingDeadlines from "@/components/dashboard/UpcomingDeadlines";
 
 export default function DashboardPage() {
   return (
-    <ProtectedRoute>
-      <div className="space-y-8">
+    <div className="space-y-8">
+      <DashboardHeader />
 
-        <UserWelcome />
+      <DashboardStats />
 
-        {/* Statistics */}
+      <QuickActions />
 
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        <RecentOrders />
 
-          <DashboardCard
-            title="Total Orders"
-            value={12}
-            icon={ClipboardList}
-            color="bg-blue-600"
-          />
-
-          <DashboardCard
-            title="Active Orders"
-            value={3}
-            icon={Clock3}
-            color="bg-yellow-500"
-          />
-
-          <DashboardCard
-            title="Completed"
-            value={9}
-            icon={CheckCircle2}
-            color="bg-green-600"
-          />
-
-          <DashboardCard
-            title="Pending Payment"
-            value="$120"
-            icon={DollarSign}
-          />
-
-        </div>
-
-        {/* Bottom */}
-
-        <div className="grid gap-6 xl:grid-cols-3">
-
-          <div className="xl:col-span-2">
-            <RecentOrders />
-          </div>
-
-          <Notifications />
-
-        </div>
-
+        <UpcomingDeadlines />
       </div>
-    </ProtectedRoute>
+    </div>
   );
 }

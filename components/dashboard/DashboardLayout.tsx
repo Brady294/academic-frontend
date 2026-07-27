@@ -1,31 +1,34 @@
 "use client";
 
 import { ReactNode } from "react";
+
 import Sidebar from "./Sidebar";
 import TopNavbar from "./TopNavbar";
 
-type DashboardLayoutProps = {
+interface Props {
   children: ReactNode;
-};
+}
 
 export default function DashboardLayout({
   children,
-}: DashboardLayoutProps) {
+}: Props) {
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="flex">
-        {/* Sidebar */}
-        <Sidebar />
+    <div className="flex min-h-screen bg-slate-50">
 
-        {/* Main Content */}
-        <div className="flex flex-1 flex-col">
-          <TopNavbar />
+      <Sidebar />
 
-          <main className="flex-1 p-6 lg:p-8">
-            {children}
-          </main>
-        </div>
-      </div>
+      <main className="flex-1 flex flex-col">
+
+        <TopNavbar />
+
+        <section className="flex-1 p-8 overflow-y-auto">
+
+          {children}
+
+        </section>
+
+      </main>
+
     </div>
   );
 }

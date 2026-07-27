@@ -8,33 +8,53 @@ import {
   ReactNode,
 } from "react";
 
-import { getDashboard } from "@/services/dashboardService";
+import dashboardService from "@/services/dashboardService";
+
+interface DashboardStats {
+  totalOrders: number;
+  activeOrders: number;
+  completedOrders: number;
+  pendingPayments: number;
+}
 
 interface DashboardContextType {
-  dashboard: any;
+  stats: DashboardStats;
   loading: boolean;
   refreshDashboard: () => Promise<void>;
 }
 
-const DashboardContext =
-  createContext<DashboardContextType | null>(null);
+const DashboardContext = createContext<DashboardContextType>(
+  {} as DashboardContextType
+);
 
 export function DashboardProvider({
   children,
 }: {
   children: ReactNode;
 }) {
-  const [dashboard, setDashboard] = useState<any>(null);
-
   const [loading, setLoading] = useState(true);
+
+  const [stats, setStats] = useState<DashboardStats>({
+    totalOrders: 0,
+    activeOrders: 0,
+    completedOrders: 0,
+    pendingPayments: 0,
+  });
 
   async function refreshDashboard() {
     try {
-      const data = await getDashboard();
+      setLoading(true);
 
-      setDashboard(data);
-    } catch (err) {
-      console.error(err);
+      const dashboard = await dashboardService.getDashboard();
+
+      setStats({
+        totalOrders: dashboard.totalOrders,
+        activeOrders: dashboard.activeOrders,
+        completedOrders: dashboard.completedOrders,
+        pendingPayments: dashboard.pendingPayments,
+      });
+    } catch (error) {
+      console.error("Dashboard Error:", error);
     } finally {
       setLoading(false);
     }
@@ -47,7 +67,7 @@ export function DashboardProvider({
   return (
     <DashboardContext.Provider
       value={{
-        dashboard,
+        stats,
         loading,
         refreshDashboard,
       }}
@@ -58,13 +78,5 @@ export function DashboardProvider({
 }
 
 export function useDashboard() {
-  const context = useContext(DashboardContext);
-
-  if (!context) {
-    throw new Error(
-      "useDashboard must be used inside DashboardProvider."
-    );
-  }
-
-  return context;
+  return useContext(DashboardContext);
 }

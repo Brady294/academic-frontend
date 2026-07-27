@@ -1,7 +1,18 @@
-import api from "@/lib/axios";
+import axios from "@/lib/axios";
 
-export const getDashboard = async () => {
-  const response = await api.get("/dashboard");
+export interface DashboardResponse {
+  totalOrders: number;
+  activeOrders: number;
+  completedOrders: number;
+  pendingPayments: number;
+}
 
-  return response.data;
+const dashboardService = {
+  async getDashboard(): Promise<DashboardResponse> {
+    const response = await axios.get("/dashboard");
+
+    return response.data;
+  },
 };
+
+export default dashboardService;
