@@ -52,17 +52,27 @@ export default function NewOrderPage() {
 
       const response = await createOrder(form);
 
-      const orderId = response.order.id;
+      const orderId =
+        response?.order?.id ??
+        response?.id ??
+        response?.data?.id ??
+        response?.data?.order?.id;
 
-      if (files.length > 0) {
-        for (const file of files) {
-          await uploadService.upload(orderId, file);
-        }
+      if (!orderId) {
+        throw new Error("Order ID not returned from the server.");
       }
 
-      router.push(`/dashboard/orders/${orderId}`);
+      if (files.length > 0) {
+        await Promise.all(
+          files.map((file) =>
+            uploadService.upload(orderId, file)
+          )
+        );
+      }
+
+      router.replace(`/dashboard/orders/${orderId}`);
     } catch (error) {
-      console.error(error);
+      console.error("Failed to create order:", error);
     } finally {
       setLoading(false);
     }
@@ -71,9 +81,9 @@ export default function NewOrderPage() {
   return (
     <div className="mx-auto max-w-6xl">
 
-      <div className="mb-10">
+      <div className="mb-8">
 
-        <h1 className="text-4xl font-bold">
+        <h1 className="text-3xl font-bold">
           Place New Order
         </h1>
 
@@ -85,18 +95,18 @@ export default function NewOrderPage() {
 
       <form
         onSubmit={handleSubmit}
-        className="space-y-8"
+        className="space-y-6"
       >
 
         {/* Assignment Details */}
 
-        <section className="rounded-3xl border border-gray-200 bg-white p-8 shadow-sm">
+        <section className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
 
-          <h2 className="mb-6 text-2xl font-bold">
+          <h2 className="mb-5 text-xl font-bold">
             Assignment Details
           </h2>
 
-          <div className="grid gap-6">
+          <div className="grid gap-5">
 
             <div>
 
@@ -109,7 +119,7 @@ export default function NewOrderPage() {
                 value={form.title}
                 onChange={handleChange}
                 required
-                className="w-full rounded-xl border border-gray-300 p-4 outline-none focus:border-blue-500"
+                className="w-full rounded-xl border border-gray-300 p-3 outline-none focus:border-blue-500"
                 placeholder="Enter assignment title"
               />
 
@@ -126,7 +136,7 @@ export default function NewOrderPage() {
                 value={form.subject}
                 onChange={handleChange}
                 required
-                className="w-full rounded-xl border border-gray-300 p-4 outline-none focus:border-blue-500"
+                className="w-full rounded-xl border border-gray-300 p-3 outline-none focus:border-blue-500"
                 placeholder="e.g Business Management"
               />
 
@@ -140,10 +150,10 @@ export default function NewOrderPage() {
 
               <textarea
                 name="instructions"
-                rows={8}
+                rows={7}
                 value={form.instructions}
                 onChange={handleChange}
-                className="w-full rounded-xl border border-gray-300 p-4 outline-none focus:border-blue-500"
+                className="w-full rounded-xl border border-gray-300 p-3 outline-none focus:border-blue-500"
                 placeholder="Paste assignment instructions here..."
               />
 
@@ -155,13 +165,13 @@ export default function NewOrderPage() {
 
         {/* Academic Details */}
 
-        <section className="rounded-3xl border border-gray-200 bg-white p-8 shadow-sm">
+        <section className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
 
-          <h2 className="mb-6 text-2xl font-bold">
+          <h2 className="mb-5 text-xl font-bold">
             Academic Details
           </h2>
 
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-5 md:grid-cols-2">
 
             <div>
 
@@ -174,7 +184,7 @@ export default function NewOrderPage() {
                 value={form.service_type}
                 onChange={handleChange}
                 required
-                className="w-full rounded-xl border border-gray-300 p-4"
+                className="w-full rounded-xl border border-gray-300 p-3"
               >
                 <option value="">Select Service</option>
                 <option>Essay</option>
@@ -198,7 +208,7 @@ export default function NewOrderPage() {
                 value={form.academic_level}
                 onChange={handleChange}
                 required
-                className="w-full rounded-xl border border-gray-300 p-4"
+                className="w-full rounded-xl border border-gray-300 p-3"
               >
                 <option value="">Select Level</option>
                 <option>High School</option>
@@ -222,7 +232,7 @@ export default function NewOrderPage() {
                 name="pages"
                 value={form.pages}
                 onChange={handleChange}
-                className="w-full rounded-xl border border-gray-300 p-4"
+                className="w-full rounded-xl border border-gray-300 p-3"
               />
 
             </div>
@@ -237,7 +247,7 @@ export default function NewOrderPage() {
                 name="spacing"
                 value={form.spacing}
                 onChange={handleChange}
-                className="w-full rounded-xl border border-gray-300 p-4"
+                className="w-full rounded-xl border border-gray-300 p-3"
               >
                 <option>Double</option>
                 <option>Single</option>
@@ -255,7 +265,7 @@ export default function NewOrderPage() {
                 name="citation_style"
                 value={form.citation_style}
                 onChange={handleChange}
-                className="w-full rounded-xl border border-gray-300 p-4"
+                className="w-full rounded-xl border border-gray-300 p-3"
               >
                 <option>APA</option>
                 <option>MLA</option>
@@ -278,7 +288,7 @@ export default function NewOrderPage() {
                 value={form.deadline}
                 onChange={handleChange}
                 required
-                className="w-full rounded-xl border border-gray-300 p-4"
+                className="w-full rounded-xl border border-gray-300 p-3"
               />
 
             </div>
@@ -294,7 +304,7 @@ export default function NewOrderPage() {
                 name="budget"
                 value={form.budget}
                 onChange={handleChange}
-                className="w-full rounded-xl border border-gray-300 p-4"
+                className="w-full rounded-xl border border-gray-300 p-3"
               />
 
             </div>
@@ -317,7 +327,7 @@ export default function NewOrderPage() {
           <button
             type="submit"
             disabled={loading}
-            className="rounded-2xl bg-blue-600 px-8 py-4 font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
+            className="rounded-xl bg-blue-600 px-8 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading ? "Submitting..." : "Submit Order"}
           </button>

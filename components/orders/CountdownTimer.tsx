@@ -9,13 +9,11 @@ interface Props {
 export default function CountdownTimer({
   deadline,
 }: Props) {
-  const [timeLeft, setTimeLeft] =
-    useState("");
+  const [timeLeft, setTimeLeft] = useState("");
 
   useEffect(() => {
-    const timer = setInterval(() => {
+    function updateTimer() {
       const end = new Date(deadline).getTime();
-
       const now = Date.now();
 
       const distance = end - now;
@@ -30,36 +28,42 @@ export default function CountdownTimer({
       );
 
       const hours = Math.floor(
-        (distance %
-          (1000 * 60 * 60 * 24)) /
+        (distance % (1000 * 60 * 60 * 24)) /
           (1000 * 60 * 60)
       );
 
       const minutes = Math.floor(
-        (distance %
-          (1000 * 60 * 60)) /
+        (distance % (1000 * 60 * 60)) /
           (1000 * 60)
       );
 
-      setTimeLeft(
-        `${days}d ${hours}h ${minutes}m`
+      const seconds = Math.floor(
+        (distance % (1000 * 60)) / 1000
       );
-    }, 1000);
+
+      setTimeLeft(
+        `${days}d ${String(hours).padStart(2, "0")}h ${String(
+          minutes
+        ).padStart(2, "0")}m ${String(seconds).padStart(2, "0")}s`
+      );
+    }
+
+    updateTimer();
+
+    const timer = setInterval(updateTimer, 1000);
 
     return () => clearInterval(timer);
   }, [deadline]);
 
   return (
-    <div className="rounded-3xl border border-orange-200 bg-orange-50 p-6">
-
-      <p className="text-sm uppercase tracking-wide text-orange-600">
+    <div className="rounded-2xl border border-orange-200 bg-orange-50 p-5 shadow-sm">
+      <p className="text-xs font-semibold uppercase tracking-widest text-orange-600">
         Time Remaining
       </p>
 
-      <h2 className="mt-3 text-3xl font-bold text-orange-700">
+      <h2 className="mt-2 text-2xl font-bold text-orange-700">
         {timeLeft}
       </h2>
-
     </div>
   );
 }

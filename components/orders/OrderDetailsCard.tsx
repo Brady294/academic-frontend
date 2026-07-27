@@ -36,39 +36,35 @@ export default function OrderDetailsCard({
     },
     {
       label: "Deadline",
-      value: new Date(
-        order.deadline
-      ).toLocaleString(),
+      value: new Date(order.deadline).toLocaleString(),
     },
     {
       label: "Created",
-      value: new Date(
-        order.created_at
-      ).toLocaleString(),
+      value: new Date(order.created_at).toLocaleString(),
     },
   ];
 
   return (
-    <section className="rounded-3xl border border-gray-200 bg-white p-8 shadow-sm">
+    <section className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
 
-      <h2 className="text-2xl font-bold">
+      <h2 className="text-xl font-bold">
         Assignment Details
       </h2>
 
-      <div className="mt-8 grid gap-6 md:grid-cols-2">
+      <div className="mt-6 grid gap-4 md:grid-cols-2">
 
         {details.map((item) => (
           <div
             key={item.label}
-            className="rounded-2xl bg-gray-50 p-5"
+            className="rounded-xl border border-gray-100 bg-gray-50 p-4"
           >
-            <p className="text-sm uppercase tracking-wide text-gray-500">
+            <p className="text-xs font-medium uppercase tracking-wider text-gray-500">
               {item.label}
             </p>
 
-            <h3 className="mt-2 text-lg font-semibold">
+            <p className="mt-1 text-base font-semibold text-gray-900 break-words">
               {item.value}
-            </h3>
+            </p>
           </div>
         ))}
 
