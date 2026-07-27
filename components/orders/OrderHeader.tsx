@@ -3,9 +3,10 @@
 import Link from "next/link";
 import {
   ArrowLeft,
-  Calendar,
+  CalendarDays,
   Clock3,
   Pencil,
+  Hash,
 } from "lucide-react";
 
 import { Order } from "@/types/order";
@@ -16,57 +17,81 @@ interface Props {
 
 const badgeColors: Record<string, string> = {
   Pending:
-    "bg-yellow-100 text-yellow-800 border-yellow-200",
+    "bg-yellow-100 text-yellow-700 border-yellow-200",
 
   "In Progress":
-    "bg-blue-100 text-blue-800 border-blue-200",
+    "bg-blue-100 text-blue-700 border-blue-200",
 
   Completed:
-    "bg-green-100 text-green-800 border-green-200",
+    "bg-green-100 text-green-700 border-green-200",
 
   Revision:
-    "bg-purple-100 text-purple-800 border-purple-200",
+    "bg-purple-100 text-purple-700 border-purple-200",
 
   Cancelled:
-    "bg-red-100 text-red-800 border-red-200",
+    "bg-red-100 text-red-700 border-red-200",
 };
 
 export default function OrderHeader({
   order,
 }: Props) {
+
   const statusClass =
     badgeColors[order.status] ??
     "bg-gray-100 text-gray-700 border-gray-200";
 
   return (
-    <section className="rounded-3xl border border-gray-200 bg-white p-8 shadow-sm">
+    <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
 
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+      {/* Header */}
 
-        <div>
+      <div className="border-b border-gray-100 px-6 py-4">
 
-          <Link
-            href="/dashboard/orders"
-            className="mb-5 inline-flex items-center gap-2 text-blue-600 hover:text-blue-700"
-          >
-            <ArrowLeft size={18} />
+        <Link
+          href="/dashboard/orders"
+          className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 transition hover:text-blue-700"
+        >
+          <ArrowLeft size={16} />
 
-            Back to Orders
-          </Link>
+          Back to Orders
 
-          <h1 className="text-3xl font-bold">
+        </Link>
+
+      </div>
+
+      {/* Body */}
+
+      <div className="flex flex-col justify-between gap-8 p-6 lg:flex-row lg:items-start">
+
+        {/* Left */}
+
+        <div className="flex-1">
+
+          <h1 className="text-3xl font-bold text-gray-900">
+
             {order.title}
+
           </h1>
 
-          <p className="mt-2 text-gray-500">
-            Order #{order.id}
-          </p>
-
-          <div className="mt-6 flex flex-wrap gap-4 text-sm text-gray-600">
+          <div className="mt-3 flex flex-wrap gap-4 text-sm text-gray-500">
 
             <div className="flex items-center gap-2">
 
-              <Calendar size={18} />
+              <Hash
+                size={16}
+                className="text-gray-400"
+              />
+
+              Order #{order.id}
+
+            </div>
+
+            <div className="flex items-center gap-2">
+
+              <CalendarDays
+                size={16}
+                className="text-blue-600"
+              />
 
               Created{" "}
               {new Date(
@@ -77,9 +102,12 @@ export default function OrderHeader({
 
             <div className="flex items-center gap-2">
 
-              <Clock3 size={18} />
+              <Clock3
+                size={16}
+                className="text-orange-600"
+              />
 
-              Deadline{" "}
+              Due{" "}
               {new Date(
                 order.deadline
               ).toLocaleString()}
@@ -90,20 +118,26 @@ export default function OrderHeader({
 
         </div>
 
-        <div className="flex flex-col items-end gap-4">
+        {/* Right */}
+
+        <div className="flex flex-col items-stretch gap-4 lg:items-end">
 
           <span
-            className={`rounded-full border px-5 py-2 font-semibold ${statusClass}`}
+            className={`inline-flex items-center justify-center rounded-full border px-4 py-2 text-sm font-semibold ${statusClass}`}
           >
+
             {order.status}
+
           </span>
 
           <button
-            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-white transition hover:bg-blue-700"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-medium text-white transition hover:bg-blue-700"
           >
+
             <Pencil size={18} />
 
             Edit Order
+
           </button>
 
         </div>

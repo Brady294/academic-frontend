@@ -22,7 +22,6 @@ export default function OrderDetailsPage() {
   const id = params.id as string;
 
   const [loading, setLoading] = useState(true);
-
   const [order, setOrder] = useState<Order | null>(null);
 
   async function loadOrder() {
@@ -46,17 +45,13 @@ export default function OrderDetailsPage() {
   if (loading) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
-
         <div className="text-center">
-
-          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
 
           <p className="mt-4 text-gray-500">
             Loading order...
           </p>
-
         </div>
-
       </div>
     );
   }
@@ -64,10 +59,9 @@ export default function OrderDetailsPage() {
   if (!order) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
+        <div className="rounded-2xl border border-gray-200 bg-white p-10 text-center shadow-sm">
 
-        <div className="rounded-3xl border bg-white p-12 text-center">
-
-          <h2 className="text-3xl font-bold">
+          <h2 className="text-3xl font-bold text-gray-900">
             Order Not Found
           </h2>
 
@@ -76,7 +70,6 @@ export default function OrderDetailsPage() {
           </p>
 
         </div>
-
       </div>
     );
   }
@@ -93,7 +86,7 @@ export default function OrderDetailsPage() {
       completed: false,
     },
     {
-      title: "Work Started",
+      title: "Writer Assigned",
       date: "Pending",
       completed: false,
     },
@@ -110,17 +103,19 @@ export default function OrderDetailsPage() {
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
 
       <OrderHeader order={order} />
 
-      <div className="grid gap-8 xl:grid-cols-3">
+      <div className="grid gap-6 xl:grid-cols-3">
 
-        {/* LEFT */}
+        {/* LEFT COLUMN */}
 
-        <div className="space-y-8 xl:col-span-2">
+        <div className="space-y-6 xl:col-span-2">
 
-          <OrderDetailsCard order={order} />
+          <OrderDetailsCard
+            order={order}
+          />
 
           <OrderInstructions
             instructions={order.instructions}
@@ -138,13 +133,11 @@ export default function OrderDetailsPage() {
             activities={activities}
           />
 
-          <SupportChat />
-
         </div>
 
-        {/* RIGHT */}
+        {/* RIGHT COLUMN */}
 
-        <div className="space-y-8">
+        <div className="space-y-6">
 
           <OrderStatusCard
             order={order}
@@ -153,6 +146,8 @@ export default function OrderDetailsPage() {
           <PaymentSummary
             order={order}
           />
+
+          <SupportChat />
 
         </div>
 

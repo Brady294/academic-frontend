@@ -25,38 +25,53 @@ export default function FileUpload({
 
   const [dragging, setDragging] = useState(false);
 
-  function fileIcon(file: File) {
+  function getFileIcon(file: File) {
     const ext = file.name.split(".").pop()?.toLowerCase();
 
     if (
       ["jpg", "jpeg", "png", "gif", "svg", "webp"].includes(
         ext || ""
       )
-    )
-      return <ImageIcon className="text-blue-600" size={18} />;
+    ) {
+      return (
+        <ImageIcon
+          size={18}
+          className="text-blue-600"
+        />
+      );
+    }
 
     if (
-      ["xls", "xlsx", "csv"].includes(ext || "")
-    )
+      ["xls", "xlsx", "csv"].includes(
+        ext || ""
+      )
+    ) {
       return (
         <FileSpreadsheet
-          className="text-green-600"
           size={18}
+          className="text-green-600"
         />
       );
+    }
 
     if (
-      ["zip", "rar", "7z"].includes(ext || "")
-    )
+      ["zip", "rar", "7z"].includes(
+        ext || ""
+      )
+    ) {
       return (
         <FileArchive
-          className="text-orange-600"
           size={18}
+          className="text-orange-600"
         />
       );
+    }
 
     return (
-      <FileText className="text-gray-600" size={18} />
+      <FileText
+        size={18}
+        className="text-gray-600"
+      />
     );
   }
 
@@ -80,7 +95,10 @@ export default function FileUpload({
       return !exists;
     });
 
-    setFiles((prev) => [...prev, ...validFiles]);
+    setFiles((prev) => [
+      ...prev,
+      ...validFiles,
+    ]);
   }
 
   function remove(index: number) {
@@ -95,47 +113,62 @@ export default function FileUpload({
   );
 
   return (
-    <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+    <section className="rounded-2xl border border-gray-200 bg-white shadow-sm">
 
-      <div className="mb-5">
+      {/* Header */}
 
-        <h2 className="text-xl font-bold">
-          Upload Files
+      <div className="border-b border-gray-100 px-6 py-5">
+
+        <h2 className="text-xl font-semibold text-gray-900">
+          Supporting Files
         </h2>
 
         <p className="mt-1 text-sm text-gray-500">
-          Assignment instructions, rubrics, datasets, lecture notes and supporting files.
+          Upload assignment instructions,
+          rubrics, lecture notes,
+          datasets or any supporting
+          documents.
         </p>
 
       </div>
 
-      <div
-        onClick={() => inputRef.current?.click()}
-        onDragOver={(e) => {
-          e.preventDefault();
-          setDragging(true);
-        }}
-        onDragLeave={() => setDragging(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setDragging(false);
-          processFiles(e.dataTransfer.files);
-        }}
-        className={`cursor-pointer rounded-2xl border-2 border-dashed p-6 transition ${
-          dragging
-            ? "border-blue-600 bg-blue-50"
-            : "border-gray-300 hover:border-blue-500 hover:bg-gray-50"
-        }`}
-      >
+      <div className="p-6">
 
-        <div className="flex flex-col items-center text-center">
+        {/* Upload Area */}
+
+        <div
+          onClick={() =>
+            inputRef.current?.click()
+          }
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragging(true);
+          }}
+          onDragLeave={() =>
+            setDragging(false)
+          }
+          onDrop={(e) => {
+            e.preventDefault();
+
+            setDragging(false);
+
+            processFiles(
+              e.dataTransfer.files
+            );
+          }}
+          className={`cursor-pointer rounded-xl border-2 border-dashed p-8 text-center transition ${
+            dragging
+              ? "border-blue-600 bg-blue-50"
+              : "border-gray-300 hover:border-blue-500 hover:bg-gray-50"
+          }`}
+        >
 
           <UploadCloud
             size={34}
-            className="text-blue-600"
+            className="mx-auto text-blue-600"
           />
 
-          <h3 className="mt-3 font-semibold">
+          <h3 className="mt-3 font-semibold text-gray-900">
             Drag & Drop Files
           </h3>
 
@@ -143,81 +176,133 @@ export default function FileUpload({
             or click to browse
           </p>
 
-          <p className="mt-2 text-xs text-gray-400">
-            PDF • DOC • DOCX • PPT • XLS • ZIP • Images • Max 20MB each
+          <p className="mt-3 text-xs text-gray-400">
+            PDF • DOC • DOCX • PPT • XLS •
+            ZIP • Images
           </p>
+
+          <input
+            hidden
+            multiple
+            ref={inputRef}
+            type="file"
+            onChange={(e) =>
+              processFiles(
+                e.target.files
+              )
+            }
+          />
 
         </div>
 
-        <input
-          hidden
-          ref={inputRef}
-          multiple
-          type="file"
-          onChange={(e) =>
-            processFiles(e.target.files)
-          }
-        />
+        {/* Files */}
 
-      </div>
+        {files.length > 0 && (
 
-      {files.length > 0 && (
-        <>
+          <>
 
-          <div className="mt-5 flex items-center justify-between">
+            <div className="mt-6 flex items-center justify-between">
 
-            <h3 className="font-semibold">
-              Selected Files
-            </h3>
+              <h3 className="font-semibold text-gray-900">
+                Selected Files
+              </h3>
 
-            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium">
-              {files.length} file{files.length > 1 ? "s" : ""} •{" "}
-              {(totalSize / 1024 / 1024).toFixed(2)} MB
-            </span>
+              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium">
 
-          </div>
+                {files.length} file
+                {files.length > 1
+                  ? "s"
+                  : ""}
 
-          <div className="mt-4 space-y-2">
+                {" • "}
 
-            {files.map((file, index) => (
-              <div
-                key={index}
-                className="flex items-center justify-between rounded-xl border border-gray-200 p-3 hover:bg-gray-50"
-              >
+                {(
+                  totalSize /
+                  1024 /
+                  1024
+                ).toFixed(2)}
+                MB
 
-                <div className="flex items-center gap-3">
+              </span>
 
-                  {fileIcon(file)}
+            </div>
 
-                  <div>
+            <div className="mt-4 space-y-2">
 
-                    <p className="text-sm font-medium">
-                      {file.name}
-                    </p>
+              {files.map(
+                (
+                  file,
+                  index
+                ) => (
 
-                    <p className="text-xs text-gray-500">
-                      {(file.size / 1024 / 1024).toFixed(2)} MB
-                    </p>
+                  <div
+                    key={index}
+                    className="flex items-center justify-between rounded-xl border border-gray-200 p-3 transition hover:bg-gray-50"
+                  >
+
+                    <div className="flex items-center gap-3">
+
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-100">
+
+                        {getFileIcon(
+                          file
+                        )}
+
+                      </div>
+
+                      <div>
+
+                        <p className="text-sm font-medium text-gray-900">
+
+                          {file.name}
+
+                        </p>
+
+                        <p className="text-xs text-gray-500">
+
+                          {(
+                            file.size /
+                            1024 /
+                            1024
+                          ).toFixed(
+                            2
+                          )}{" "}
+                          MB
+
+                        </p>
+
+                      </div>
+
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        remove(
+                          index
+                        )
+                      }
+                      className="rounded-lg p-2 text-red-600 transition hover:bg-red-50"
+                    >
+
+                      <Trash2
+                        size={16}
+                      />
+
+                    </button>
 
                   </div>
 
-                </div>
+                )
+              )}
 
-                <button
-                  type="button"
-                  onClick={() => remove(index)}
-                  className="rounded-lg p-2 text-red-600 hover:bg-red-50"
-                >
-                  <Trash2 size={16} />
-                </button>
+            </div>
 
-              </div>
-            ))}
+          </>
 
-          </div>
+        )}
 
-        </>
-      )}
+      </div>
 
     </section>
   );
