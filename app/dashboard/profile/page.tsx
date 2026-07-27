@@ -16,7 +16,7 @@ import {
   Save,
 } from "lucide-react";
 
-import profileService from "@/services/profileService";
+import profileService from "@/services/ProfileService";
 import { Profile } from "@/types/profile";
 
 export default function ProfilePage() {
