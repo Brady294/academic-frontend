@@ -1,10 +1,11 @@
 "use client";
 
 import {
-  DollarSign,
-  CreditCard,
-  BadgeDollarSign,
   ArrowRight,
+  BadgeDollarSign,
+  CheckCircle2,
+  CreditCard,
+  Wallet,
 } from "lucide-react";
 
 import { Order } from "@/types/order";
@@ -16,120 +17,149 @@ interface Props {
 export default function PaymentSummary({
   order,
 }: Props) {
-  const amount = Number(order.budget ?? 0);
+  const total = Number(order.budget ?? 0);
 
+  // Replace later with real payment status
   const paid = false;
+
+  const due = paid ? 0 : total;
 
   return (
     <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
 
-      {/* Header */}
+      <div className="border-b border-gray-100 px-5 py-4">
 
-      <div className="border-b border-gray-100 px-6 py-5">
-
-        <h2 className="text-xl font-semibold text-gray-900">
-          Payment Summary
+        <h2 className="text-lg font-bold text-gray-900">
+          Payment
         </h2>
 
         <p className="mt-1 text-sm text-gray-500">
-          Review your order payment details.
+          Billing overview for this order.
         </p>
 
       </div>
 
-      {/* Body */}
+      <div className="space-y-4 p-5">
 
-      <div className="space-y-5 p-6">
+        <div className="rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 p-5 text-white">
 
-        {/* Amount */}
-
-        <div className="rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 p-5 text-white">
-
-          <div className="flex items-center gap-3">
-
-            <BadgeDollarSign size={22} />
-
-            <span className="text-sm font-medium opacity-90">
-              Total Budget
-            </span>
-
-          </div>
-
-          <h3 className="mt-3 text-3xl font-bold">
-            ${amount.toFixed(2)}
-          </h3>
-
-        </div>
-
-        {/* Status */}
-
-        <div className="flex items-center justify-between rounded-xl border border-gray-200 p-4">
-
-          <div className="flex items-center gap-3">
-
-            <CreditCard
-              size={20}
-              className="text-blue-600"
-            />
+          <div className="flex items-center justify-between">
 
             <div>
 
-              <p className="text-sm font-medium text-gray-900">
-                Payment Status
+              <p className="text-xs uppercase tracking-wider text-blue-100">
+                Total Budget
               </p>
 
-              <p className="text-xs text-gray-500">
-                Current payment progress
-              </p>
+              <h3 className="mt-2 text-3xl font-bold">
+                ${total.toFixed(2)}
+              </h3>
+
+            </div>
+
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20">
+
+              <BadgeDollarSign size={24} />
 
             </div>
 
           </div>
 
-          <span
-            className={`rounded-full px-3 py-1 text-xs font-semibold ${
-              paid
-                ? "bg-green-100 text-green-700"
-                : "bg-yellow-100 text-yellow-700"
-            }`}
-          >
-            {paid ? "Paid" : "Pending"}
-          </span>
+        </div>
+
+        <div className="rounded-xl border border-gray-200 p-4">
+
+          <div className="flex items-center justify-between">
+
+            <div className="flex items-center gap-3">
+
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100">
+
+                <Wallet
+                  size={18}
+                  className="text-green-600"
+                />
+
+              </div>
+
+              <div>
+
+                <p className="text-xs uppercase tracking-wide text-gray-500">
+                  Amount Due
+                </p>
+
+                <p className="text-lg font-bold text-gray-900">
+                  ${due.toFixed(2)}
+                </p>
+
+              </div>
+
+            </div>
+
+          </div>
 
         </div>
 
-        {/* Due */}
+        <div className="rounded-xl border border-gray-200 p-4">
 
-        <div className="flex items-center justify-between rounded-xl bg-gray-50 p-4">
+          <div className="flex items-center justify-between">
 
-          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3">
 
-            <DollarSign
-              size={18}
-              className="text-green-600"
-            />
+              <div
+                className={`flex h-10 w-10 items-center justify-center rounded-lg ${
+                  paid
+                    ? "bg-green-100"
+                    : "bg-amber-100"
+                }`}
+              >
 
-            <span className="text-sm font-medium">
-              Amount Due
+                <CheckCircle2
+                  size={18}
+                  className={
+                    paid
+                      ? "text-green-600"
+                      : "text-amber-600"
+                  }
+                />
+
+              </div>
+
+              <div>
+
+                <p className="text-xs uppercase tracking-wide text-gray-500">
+                  Status
+                </p>
+
+                <p className="font-semibold text-gray-900">
+                  {paid
+                    ? "Payment Completed"
+                    : "Awaiting Payment"}
+                </p>
+
+              </div>
+
+            </div>
+
+            <span
+              className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                paid
+                  ? "bg-green-100 text-green-700"
+                  : "bg-amber-100 text-amber-700"
+              }`}
+            >
+              {paid ? "Paid" : "Pending"}
             </span>
 
           </div>
 
-          <span className="text-lg font-bold text-gray-900">
-            ${paid ? "0.00" : amount.toFixed(2)}
-          </span>
-
         </div>
 
-        {/* Button */}
-
-        <button
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 font-semibold text-white transition hover:bg-blue-700"
-        >
+        <button className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 font-semibold text-white transition hover:bg-blue-700">
 
           <CreditCard size={18} />
 
-          {paid ? "View Receipt" : "Make Payment"}
+          {paid ? "View Receipt" : "Pay Now"}
 
           <ArrowRight size={16} />
 

@@ -1,9 +1,9 @@
 "use client";
 
 import {
+  BookOpen,
   CheckCircle2,
   Clock3,
-  BookOpen,
   FileText,
 } from "lucide-react";
 
@@ -15,170 +15,227 @@ interface Props {
   order: Order;
 }
 
+const statusMap: Record<
+  string,
+  {
+    color: string;
+    progress: number;
+  }
+> = {
+  Pending: {
+    color: "bg-amber-100 text-amber-700",
+    progress: 20,
+  },
+  Assigned: {
+    color: "bg-sky-100 text-sky-700",
+    progress: 40,
+  },
+  "In Progress": {
+    color: "bg-blue-100 text-blue-700",
+    progress: 65,
+  },
+  Revision: {
+    color: "bg-violet-100 text-violet-700",
+    progress: 85,
+  },
+  Completed: {
+    color: "bg-emerald-100 text-emerald-700",
+    progress: 100,
+  },
+  Delivered: {
+    color: "bg-emerald-100 text-emerald-700",
+    progress: 100,
+  },
+  Cancelled: {
+    color: "bg-red-100 text-red-700",
+    progress: 0,
+  },
+};
+
 export default function OrderStatusCard({
   order,
 }: Props) {
-
-  const status =
-    order.status || "Pending";
-
-  const badgeColor = (() => {
-
-    switch (status.toLowerCase()) {
-
-      case "completed":
-      case "delivered":
-        return "bg-green-100 text-green-700";
-
-      case "in progress":
-      case "assigned":
-        return "bg-blue-100 text-blue-700";
-
-      case "revision":
-        return "bg-purple-100 text-purple-700";
-
-      case "cancelled":
-        return "bg-red-100 text-red-700";
-
-      default:
-        return "bg-yellow-100 text-yellow-700";
-
-    }
-
-  })();
+  const current =
+    statusMap[order.status] ?? {
+      color: "bg-gray-100 text-gray-700",
+      progress: 15,
+    };
 
   return (
     <div className="space-y-5">
-
-      {/* Countdown */}
 
       <CountdownTimer
         deadline={order.deadline}
       />
 
-      {/* Status Card */}
-
       <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
 
-        {/* Header */}
+        <div className="border-b border-gray-100 px-5 py-4">
 
-        <div className="border-b border-gray-100 px-6 py-5">
-
-          <h2 className="text-xl font-semibold text-gray-900">
-            Order Status
+          <h2 className="text-lg font-bold text-gray-900">
+            Order Progress
           </h2>
 
           <p className="mt-1 text-sm text-gray-500">
-            Current progress of your assignment.
+            Current workflow status.
           </p>
 
         </div>
 
-        {/* Body */}
+        <div className="space-y-5 p-5">
 
-        <div className="space-y-4 p-6">
+          <div>
 
-          {/* Current Status */}
+            <div className="mb-3 flex items-center justify-between">
 
-          <div className="flex items-center justify-between rounded-xl border border-gray-200 p-4">
+              <span className="text-sm font-medium text-gray-600">
+                Progress
+              </span>
 
-            <div className="flex items-center gap-3">
+              <span
+                className={`rounded-full px-3 py-1 text-xs font-semibold ${current.color}`}
+              >
+                {order.status}
+              </span>
 
-              <CheckCircle2
-                size={20}
-                className="text-green-600"
+            </div>
+
+            <div className="h-2 overflow-hidden rounded-full bg-gray-100">
+
+              <div
+                className="h-full rounded-full bg-blue-600 transition-all duration-500"
+                style={{
+                  width: `${current.progress}%`,
+                }}
               />
 
-              <div>
+            </div>
 
-                <p className="text-sm font-medium text-gray-900">
-                  Current Status
-                </p>
+            <p className="mt-2 text-right text-xs font-semibold text-blue-600">
+              {current.progress}% Complete
+            </p>
 
-                <p className="text-xs text-gray-500">
-                  Latest workflow stage
-                </p>
+          </div>
+
+          <div className="space-y-3">
+
+            <div className="flex items-center justify-between rounded-xl border border-gray-200 p-3">
+
+              <div className="flex items-center gap-3">
+
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
+
+                  <FileText
+                    size={18}
+                    className="text-blue-600"
+                  />
+
+                </div>
+
+                <div>
+
+                  <p className="text-xs uppercase tracking-wide text-gray-500">
+                    Service
+                  </p>
+
+                  <p className="text-sm font-semibold text-gray-900">
+                    {order.service_type}
+                  </p>
+
+                </div>
 
               </div>
 
             </div>
 
-            <span
-              className={`rounded-full px-3 py-1 text-xs font-semibold ${badgeColor}`}
-            >
-              {status}
-            </span>
+            <div className="flex items-center justify-between rounded-xl border border-gray-200 p-3">
 
-          </div>
+              <div className="flex items-center gap-3">
 
-          {/* Service */}
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100">
 
-          <div className="flex items-center justify-between rounded-xl bg-gray-50 p-4">
+                  <BookOpen
+                    size={18}
+                    className="text-indigo-600"
+                  />
 
-            <div className="flex items-center gap-3">
+                </div>
 
-              <FileText
-                size={18}
-                className="text-blue-600"
-              />
+                <div>
 
-              <span className="text-sm font-medium">
-                Service
-              </span>
+                  <p className="text-xs uppercase tracking-wide text-gray-500">
+                    Subject
+                  </p>
 
-            </div>
+                  <p className="text-sm font-semibold text-gray-900">
+                    {order.subject}
+                  </p>
 
-            <span className="font-semibold text-gray-900">
-              {order.service_type}
-            </span>
+                </div>
 
-          </div>
-
-          {/* Subject */}
-
-          <div className="flex items-center justify-between rounded-xl bg-gray-50 p-4">
-
-            <div className="flex items-center gap-3">
-
-              <BookOpen
-                size={18}
-                className="text-indigo-600"
-              />
-
-              <span className="text-sm font-medium">
-                Subject
-              </span>
+              </div>
 
             </div>
 
-            <span className="font-semibold text-gray-900">
-              {order.subject}
-            </span>
+            <div className="flex items-center justify-between rounded-xl border border-gray-200 p-3">
 
-          </div>
+              <div className="flex items-center gap-3">
 
-          {/* Deadline */}
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-100">
 
-          <div className="flex items-center justify-between rounded-xl bg-gray-50 p-4">
+                  <Clock3
+                    size={18}
+                    className="text-orange-600"
+                  />
 
-            <div className="flex items-center gap-3">
+                </div>
 
-              <Clock3
-                size={18}
-                className="text-orange-600"
-              />
+                <div>
 
-              <span className="text-sm font-medium">
-                Deadline
-              </span>
+                  <p className="text-xs uppercase tracking-wide text-gray-500">
+                    Deadline
+                  </p>
+
+                  <p className="text-sm font-semibold text-gray-900">
+                    {new Date(
+                      order.deadline
+                    ).toLocaleString()}
+                  </p>
+
+                </div>
+
+              </div>
 
             </div>
 
-            <span className="text-sm font-semibold text-gray-900">
-              {new Date(
-                order.deadline
-              ).toLocaleDateString()}
-            </span>
+            <div className="flex items-center justify-between rounded-xl border border-gray-200 p-3">
+
+              <div className="flex items-center gap-3">
+
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100">
+
+                  <CheckCircle2
+                    size={18}
+                    className="text-emerald-600"
+                  />
+
+                </div>
+
+                <div>
+
+                  <p className="text-xs uppercase tracking-wide text-gray-500">
+                    Academic Level
+                  </p>
+
+                  <p className="text-sm font-semibold text-gray-900">
+                    {order.academic_level}
+                  </p>
+
+                </div>
+
+              </div>
+
+            </div>
 
           </div>
 

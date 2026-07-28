@@ -2,13 +2,15 @@
 
 import {
   createContext,
+  ReactNode,
   useContext,
   useEffect,
   useState,
-  ReactNode,
 } from "react";
 
-import dashboardService from "@/services/dashboardService";
+import dashboardService, {
+  DashboardStatOrder,
+} from "@/services/dashboardService";
 
 interface DashboardStats {
   totalOrders: number;
@@ -19,7 +21,17 @@ interface DashboardStats {
 
 interface DashboardContextType {
   stats: DashboardStats;
+
+  recentOrders: DashboardStatOrder[];
+
+  upcomingDeadlines: DashboardStatOrder[];
+
+  recentActivity: any[];
+
+  notifications: any[];
+
   loading: boolean;
+
   refreshDashboard: () => Promise<void>;
 }
 
@@ -41,11 +53,28 @@ export function DashboardProvider({
     pendingPayments: 0,
   });
 
+  const [recentOrders, setRecentOrders] = useState<
+    DashboardStatOrder[]
+  >([]);
+
+  const [upcomingDeadlines, setUpcomingDeadlines] = useState<
+    DashboardStatOrder[]
+  >([]);
+
+  const [recentActivity, setRecentActivity] = useState<any[]>(
+    []
+  );
+
+  const [notifications, setNotifications] = useState<any[]>(
+    []
+  );
+
   async function refreshDashboard() {
     try {
       setLoading(true);
 
-      const dashboard = await dashboardService.getDashboard();
+      const dashboard =
+        await dashboardService.getDashboard();
 
       setStats({
         totalOrders: dashboard.totalOrders,
@@ -53,6 +82,22 @@ export function DashboardProvider({
         completedOrders: dashboard.completedOrders,
         pendingPayments: dashboard.pendingPayments,
       });
+
+      setRecentOrders(
+        dashboard.recentOrders ?? []
+      );
+
+      setUpcomingDeadlines(
+        dashboard.upcomingDeadlines ?? []
+      );
+
+      setRecentActivity(
+        dashboard.recentActivity ?? []
+      );
+
+      setNotifications(
+        dashboard.notifications ?? []
+      );
     } catch (error) {
       console.error("Dashboard Error:", error);
     } finally {
@@ -68,6 +113,10 @@ export function DashboardProvider({
     <DashboardContext.Provider
       value={{
         stats,
+        recentOrders,
+        upcomingDeadlines,
+        recentActivity,
+        notifications,
         loading,
         refreshDashboard,
       }}

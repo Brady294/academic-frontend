@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Clock3, AlertTriangle } from "lucide-react";
+import {
+  AlertTriangle,
+  Clock3,
+ Timer,
+} from "lucide-react";
 
 interface Props {
   deadline: string;
@@ -48,8 +52,9 @@ export default function CountdownTimer({
         (distance % (1000 * 60)) / 1000
       );
 
-      // Warning when less than 24 hours remain
-      setWarning(distance <= 1000 * 60 * 60 * 24);
+      setWarning(
+        distance <= 24 * 60 * 60 * 1000
+      );
 
       setTimeLeft(
         `${days}d ${String(hours).padStart(
@@ -67,74 +72,105 @@ export default function CountdownTimer({
 
     updateTimer();
 
-    const timer = setInterval(updateTimer, 1000);
+    const interval = setInterval(
+      updateTimer,
+      1000
+    );
 
-    return () => clearInterval(timer);
+    return () => clearInterval(interval);
   }, [deadline]);
 
-  const colors = expired
+  const theme = expired
     ? {
-        border: "border-red-200",
         bg: "bg-red-50",
-        icon: "text-red-600",
-        title: "text-red-600",
-        value: "text-red-700",
+        border: "border-red-200",
+        badge: "bg-red-100 text-red-700",
+        icon: AlertTriangle,
+        iconBg: "bg-red-100",
+        iconColor: "text-red-600",
       }
     : warning
     ? {
-        border: "border-orange-200",
-        bg: "bg-orange-50",
-        icon: "text-orange-600",
-        title: "text-orange-600",
-        value: "text-orange-700",
+        bg: "bg-amber-50",
+        border: "border-amber-200",
+        badge: "bg-amber-100 text-amber-700",
+        icon: AlertTriangle,
+        iconBg: "bg-amber-100",
+        iconColor: "text-amber-600",
       }
     : {
-        border: "border-blue-200",
         bg: "bg-blue-50",
-        icon: "text-blue-600",
-        title: "text-blue-600",
-        value: "text-blue-700",
+        border: "border-blue-200",
+        badge: "bg-blue-100 text-blue-700",
+        icon: Clock3,
+        iconBg: "bg-blue-100",
+        iconColor: "text-blue-600",
       };
 
+  const Icon = theme.icon;
+
   return (
-    <div
-      className={`rounded-2xl border ${colors.border} ${colors.bg} p-5 shadow-sm`}
+    <section
+      className={`overflow-hidden rounded-2xl border ${theme.border} ${theme.bg} shadow-sm`}
     >
-      <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between p-4">
 
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm">
+        <div className="flex items-center gap-3">
 
-          {expired ? (
-            <AlertTriangle
+          <div
+            className={`flex h-11 w-11 items-center justify-center rounded-xl ${theme.iconBg}`}
+          >
+            <Icon
               size={20}
-              className={colors.icon}
+              className={theme.iconColor}
             />
-          ) : (
-            <Clock3
-              size={20}
-              className={colors.icon}
-            />
-          )}
+          </div>
+
+          <div>
+
+            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+              Time Remaining
+            </p>
+
+            <h2 className="mt-1 text-xl font-bold text-gray-900">
+              {timeLeft}
+            </h2>
+
+          </div>
 
         </div>
 
-        <div>
+        <div
+          className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold ${theme.badge}`}
+        >
+          <Timer size={14} />
 
-          <p
-            className={`text-xs font-semibold uppercase tracking-wider ${colors.title}`}
-          >
-            Time Remaining
-          </p>
-
-          <h2
-            className={`mt-1 text-xl font-bold ${colors.value}`}
-          >
-            {timeLeft}
-          </h2>
+          {expired
+            ? "Expired"
+            : warning
+            ? "Urgent"
+            : "On Track"}
 
         </div>
 
       </div>
-    </div>
+
+      <div className="border-t border-white/70 bg-white/40 px-4 py-3">
+
+        <div className="flex items-center justify-between">
+
+          <span className="text-sm text-gray-500">
+            Deadline
+          </span>
+
+          <span className="text-sm font-semibold text-gray-900">
+            {new Date(deadline).toLocaleString()}
+          </span>
+
+        </div>
+
+      </div>
+
+    </section>
   );
 }

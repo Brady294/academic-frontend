@@ -1,86 +1,224 @@
 "use client";
 
-import { LogOut, Settings, User } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import {
+  ChevronDown,
+  LogOut,
+  Settings,
+  User,
+  LifeBuoy,
+} from "lucide-react";
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
+import { useAuthContext } from "@/contexts/AuthContext";
 
 export default function UserDropdown() {
   const [open, setOpen] = useState(false);
 
   const ref = useRef<HTMLDivElement>(null);
 
+  const router = useRouter();
+
+  const {
+    user,
+    loading,
+    logout,
+  } = useAuthContext();
+
   useEffect(() => {
-    function close(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
+    function handleClickOutside(
+      event: MouseEvent
+    ) {
+      if (
+        ref.current &&
+        !ref.current.contains(
+          event.target as Node
+        )
+      ) {
         setOpen(false);
       }
     }
 
-    document.addEventListener("mousedown", close);
+    function handleEscape(
+      event: KeyboardEvent
+    ) {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    }
 
-    return () => document.removeEventListener("mousedown", close);
+    document.addEventListener(
+      "mousedown",
+      handleClickOutside
+    );
+
+    document.addEventListener(
+      "keydown",
+      handleEscape
+    );
+
+    return () => {
+      document.removeEventListener(
+        "mousedown",
+        handleClickOutside
+      );
+
+      document.removeEventListener(
+        "keydown",
+        handleEscape
+      );
+    };
   }, []);
 
-  function logout() {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("user");
+  async function handleLogout() {
+    await logout();
 
-    window.location.href = "/login";
+    router.replace("/login");
+
+    router.refresh();
   }
 
-  return (
-    <div className="relative" ref={ref}>
+  if (loading) {
+    return (
+      <div className="h-12 w-44 animate-pulse rounded-xl bg-gray-100" />
+    );
+  }
 
+  const firstName =
+    user?.name?.trim().split(" ")[0] ||
+    "User";
+
+  const initial =
+    firstName.charAt(0).toUpperCase();
+
+  return (
+    <div
+      ref={ref}
+      className="relative"
+    >
       <button
-        onClick={() => setOpen(!open)}
-        className="flex items-center gap-3"
+        onClick={() =>
+          setOpen((prev) => !prev)
+        }
+        className="flex items-center gap-3 rounded-xl px-2 py-1 transition hover:bg-gray-50"
       >
-        <div className="w-11 h-11 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">
-          J
+        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-600 text-base font-semibold text-white">
+          {initial}
         </div>
 
-        <div className="text-left">
-          <p className="font-semibold">Student</p>
-          <p className="text-sm text-gray-500">
+        <div className="hidden text-left md:block">
+          <p className="text-sm font-semibold text-gray-900">
+            {firstName}
+          </p>
+
+          <p className="text-xs text-gray-500">
             My Account
           </p>
         </div>
+
+        <ChevronDown
+          size={16}
+          className={`hidden text-gray-500 transition duration-200 md:block ${
+            open
+              ? "rotate-180"
+              : ""
+          }`}
+        />
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-4 w-64 rounded-2xl border bg-white shadow-xl overflow-hidden z-50">
+        <div className="absolute right-0 z-50 mt-3 w-72 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl">
 
-          <Link
-            href="/dashboard/profile"
-            className="flex items-center gap-3 px-5 py-4 hover:bg-gray-50"
-          >
-            <User size={18} />
+          <div className="border-b border-gray-100 px-5 py-5">
 
-            Profile
-          </Link>
+            <div className="flex items-center gap-3">
 
-          <Link
-            href="/dashboard/settings"
-            className="flex items-center gap-3 px-5 py-4 hover:bg-gray-50"
-          >
-            <Settings size={18} />
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-600 text-lg font-semibold text-white">
+                {initial}
+              </div>
 
-            Settings
-          </Link>
+              <div>
 
-          <button
-            onClick={logout}
-            className="w-full text-left flex items-center gap-3 px-5 py-4 hover:bg-red-50 text-red-600"
-          >
-            <LogOut size={18} />
+                <p className="font-semibold text-gray-900">
+                  {user?.name}
+                </p>
 
-            Logout
-          </button>
+                <p className="text-sm text-gray-500">
+                  {user?.email}
+                </p>
+
+              </div>
+
+            </div>
+
+          </div>
+
+          <div className="py-2">
+
+            <Link
+              href="/dashboard/profile"
+              className="flex items-center gap-3 px-5 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+              onClick={() =>
+                setOpen(false)
+              }
+            >
+              <User size={18} />
+
+              Profile
+
+            </Link>
+
+            <Link
+              href="/dashboard/settings"
+              className="flex items-center gap-3 px-5 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+              onClick={() =>
+                setOpen(false)
+              }
+            >
+              <Settings size={18} />
+
+              Settings
+
+            </Link>
+
+            <Link
+              href="/dashboard/support"
+              className="flex items-center gap-3 px-5 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+              onClick={() =>
+                setOpen(false)
+              }
+            >
+              <LifeBuoy size={18} />
+
+              Support
+
+            </Link>
+
+          </div>
+
+          <div className="border-t border-gray-100 p-2">
+
+            <button
+              onClick={
+                handleLogout
+              }
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium text-red-600 transition hover:bg-red-50"
+            >
+              <LogOut size={18} />
+
+              Logout
+
+            </button>
+
+          </div>
 
         </div>
       )}
-
     </div>
   );
 }
