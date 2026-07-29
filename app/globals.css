@@ -100,56 +100,7 @@ a {
 }
 
 /* ===========================================================
-   BUTTONS
-=========================================================== */
-
-.btn-primary {
-  background: var(--accent);
-  color: white;
-  padding: 15px 34px;
-  border-radius: 14px;
-  font-weight: 700;
-  transition: 0.3s;
-  box-shadow: var(--shadow-sm);
-}
-
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-}
-
-.btn-secondary {
-  border: 2px solid var(--primary);
-  color: var(--primary);
-  padding: 15px 34px;
-  border-radius: 14px;
-  font-weight: 700;
-  transition: 0.3s;
-}
-
-.btn-secondary:hover {
-  background: var(--primary);
-  color: white;
-}
-
-/* ===========================================================
-   CARDS
-=========================================================== */
-
-.card {
-  background: white;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
-  transition: 0.3s;
-}
-
-.card:hover {
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-4px);
-}
-
-/* ===========================================================
-   INPUTS
+   INPUTS (base element styling, used outside form-heavy pages)
 =========================================================== */
 
 input,
@@ -170,14 +121,6 @@ select:focus {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
-}
-
-/* ===========================================================
-   SECTION
-=========================================================== */
-
-section {
-  padding: 100px 0;
 }
 
 /* ===========================================================
@@ -208,9 +151,9 @@ section {
   box-shadow: var(--shadow-md);
 }
 
-/* =========================================
+/* ===========================================================
    UNIVERSITY LOGO MARQUEE
-========================================= */
+=========================================================== */
 
 .marquee {
   width: max-content;
@@ -231,21 +174,14 @@ section {
   }
 }
 
-/* ==========================================================
+/* ===========================================================
    PREMIUM BACKGROUND
-========================================================== */
-
-html {
-  scroll-behavior: smooth;
-}
+=========================================================== */
 
 body::before {
   content: "";
-
   position: fixed;
-
   inset: 0;
-
   pointer-events: none;
 
   background-image:
@@ -259,25 +195,21 @@ body::before {
 
 body::after {
   content: "";
-
   position: fixed;
-
   inset: 0;
-
   pointer-events: none;
-
-  opacity: .025;
+  opacity: 0.025;
 
   background-image:
-    radial-gradient(circle at 25% 25%, rgba(59,130,246,.06) 0%, transparent 55%),
-    radial-gradient(circle at 75% 75%, rgba(99,102,241,.05) 0%, transparent 55%);
+    radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.06) 0%, transparent 55%),
+    radial-gradient(circle at 75% 75%, rgba(99, 102, 241, 0.05) 0%, transparent 55%);
 
   z-index: -39;
 }
 
-/* ==========================================================
-   TOPSTUDYTUTOR DESIGN SYSTEM
-========================================================== */
+/* ===========================================================
+   COMPONENT LAYER (Tailwind @apply — single source of truth)
+=========================================================== */
 
 @layer components {
 
@@ -329,14 +261,8 @@ body::after {
 
   /* INPUTS */
 
-  .input {
-    @apply w-full rounded-xl border border-slate-200 bg-white px-4 py-3 outline-none transition-all duration-300 focus:border-blue-600 focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:ring-blue-900;
-  }
-
-  .select {
-    @apply w-full rounded-xl border border-slate-200 bg-white px-4 py-3 outline-none transition-all duration-300 focus:border-blue-600 focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:ring-blue-900;
-  }
-
+  .input,
+  .select,
   .textarea {
     @apply w-full rounded-xl border border-slate-200 bg-white px-4 py-3 outline-none transition-all duration-300 focus:border-blue-600 focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:ring-blue-900;
   }
