@@ -100,7 +100,20 @@ a {
 }
 
 /* ===========================================================
-   INPUTS (base element styling, used outside form-heavy pages)
+   LANDING PAGE SECTIONS
+   (Scoped on purpose — do NOT apply to bare <section> tags.
+   The dashboard uses plain <section> elements for cards and
+   must NOT get this padding. Add className="landing-section"
+   only to top-level sections on the marketing/landing page,
+   e.g. Hero, Pricing Calculator, Subjects, Samples, etc.)
+=========================================================== */
+
+.landing-section {
+  padding: 100px 0;
+}
+
+/* ===========================================================
+   INPUTS (base element styling)
 =========================================================== */
 
 input,
