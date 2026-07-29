@@ -147,7 +147,7 @@ export default function OrderDetailsPage() {
             order={order}
           />
 
-          <SupportChat />
+          <SupportChat orderId={order.id} />
 
         </div>
 
