@@ -7,8 +7,8 @@ import {
   Calendar,
   BookOpen,
   FileText,
-  Loader2,
   Info,
+  Loader2,
 } from "lucide-react";
 
 import orderService, {
@@ -48,8 +48,14 @@ export default function HeroCalculator() {
     useState("");
 
   /**
-   * Convert the selected date to the number
-   * of hours remaining until 11:59 PM that day.
+   * Convert the selected date into the number
+   * of hours remaining until 11:59:59 PM.
+   *
+   * IMPORTANT:
+   * This only determines the deadline input sent
+   * to the backend.
+   *
+   * The frontend does NOT calculate pricing.
    */
   function getDeadlineHours(
     selectedDate: string
@@ -58,28 +64,24 @@ export default function HeroCalculator() {
       return NaN;
     }
 
-    const now = new Date();
-
     const deadlineDate = new Date(
       `${selectedDate}T23:59:59`
     );
 
-    const difference =
-      deadlineDate.getTime() -
-      now.getTime();
+    const now = new Date();
 
     return (
-      difference /
+      (deadlineDate.getTime() -
+        now.getTime()) /
       (1000 * 60 * 60)
     );
   }
 
   /**
-   * Convert words to pages.
+   * Convert words to pages for the purpose
+   * of sending a work-size quantity to the backend.
    *
-   * This is only a quantity conversion.
-   * The actual PRICE is always calculated
-   * by the backend.
+   * This is NOT a price calculation.
    */
   function getPagesFromWords(
     words: number
@@ -96,29 +98,43 @@ export default function HeroCalculator() {
   }
 
   /**
-   * Calculate price through the backend.
+   * Calculate price.
+   *
+   * IMPORTANT:
+   * There is NO pricing formula here.
+   *
+   * The backend pricing engine is responsible for:
+   *
+   * High School = $10/page
+   * University = $12/page
+   * Masters = $18/page
+   *
+   * Deadline multipliers
+   *
+   * < 12 hours = 2.0
+   * <= 24 hours = 1.5
+   * <= 72 hours = 1.2
+   * > 72 hours = 1.0
+   *
+   * Deposit = 60%
    */
   async function handleCalculatePrice() {
     setError("");
     setPricing(null);
 
-    /*
-     * Academic level is required because
-     * the backend uses it to determine:
-     *
-     * High School = $10
-     * University = $12
-     * Masters = $18
+    /**
+     * Academic level
      */
     if (!academicLevel) {
       setError(
         "Please select your academic level."
       );
+
       return;
     }
 
-    /*
-     * Validate quantity.
+    /**
+     * Quantity
      */
     const numericQuantity =
       Number(quantity);
@@ -136,8 +152,8 @@ export default function HeroCalculator() {
       return;
     }
 
-    /*
-     * Validate deadline.
+    /**
+     * Deadline
      */
     if (!deadline) {
       setError(
@@ -147,8 +163,13 @@ export default function HeroCalculator() {
       return;
     }
 
-    /*
-     * Calculate hours until deadline.
+    /**
+     * Deadline hours
+     *
+     * The frontend calculates only the
+     * number of hours remaining.
+     *
+     * The backend determines the multiplier.
      */
     const deadlineHours =
       getDeadlineHours(deadline);
@@ -164,22 +185,17 @@ export default function HeroCalculator() {
       return;
     }
 
-    /*
-     * Convert words to pages if necessary.
-     *
-     * IMPORTANT:
-     * We are NOT calculating the price here.
-     * Only converting the quantity to pages.
+    /**
+     * Determine pages.
      */
     let pages: number;
 
     if (workType === "pages") {
       pages = numericQuantity;
     } else {
-      pages =
-        getPagesFromWords(
-          numericQuantity
-        );
+      pages = getPagesFromWords(
+        numericQuantity
+      );
     }
 
     if (
@@ -193,22 +209,27 @@ export default function HeroCalculator() {
       return;
     }
 
+    /**
+     * Send request to backend.
+     *
+     * IMPORTANT:
+     * There is NO price calculation here.
+     */
     try {
       setLoading(true);
 
-      /*
-       * EVERYTHING related to price calculation
-       * is now sent to the backend.
-       */
       const result =
         await orderService.previewPrice({
           pages,
-          academic_level:
-            academicLevel,
-          deadline_hours:
-            deadlineHours,
+          academic_level: academicLevel,
+          deadline_hours: deadlineHours,
           currency: "USD",
         });
+
+      console.log(
+        "PRICE PREVIEW RESPONSE:",
+        result
+      );
 
       setPricing(result);
     } catch (err: any) {
@@ -217,61 +238,48 @@ export default function HeroCalculator() {
         err
       );
 
-      console.error(
-        "PRICE CALCULATION RESPONSE:",
-        err?.response?.data
-      );
+      /**
+       * Show the actual backend error when available.
+       * This makes future debugging much easier.
+       */
+      const backendMessage =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.response?.data?.detail;
 
       setError(
-        err?.response?.data?.message ||
-          err?.response?.data?.error ||
-          "Unable to calculate the price right now. Please try again."
+        backendMessage ||
+          "Pricing calculation failed. Please try again."
       );
     } finally {
       setLoading(false);
     }
   }
 
-  /*
-   * Word/page conversion preview.
+  /**
+   * Format money safely.
    */
-  function getConversionText() {
-    if (!quantity) {
-      return workType === "pages"
-        ? "1 Page ≈ 275 Words (Double Spacing)"
-        : "275 Words ≈ 1 Page (Double Spacing)";
-    }
-
-    const value =
-      Number(quantity);
-
+  function formatMoney(
+    value: number | null | undefined
+  ) {
     if (
-      !Number.isFinite(value) ||
-      value <= 0
+      value === null ||
+      value === undefined ||
+      !Number.isFinite(value)
     ) {
-      return "";
+      return "—";
     }
 
-    if (workType === "pages") {
-      const words =
-        spacing === "Double"
-          ? value * 275
-          : spacing === "1.5 Spacing"
-          ? value * 365
-          : value * 550;
-
-      return `≈ ${words.toLocaleString()} Words`;
-    }
-
-    const pages =
-      spacing === "Double"
-        ? value / 275
-        : spacing === "1.5 Spacing"
-        ? value / 365
-        : value / 550;
-
-    return `≈ ${pages.toFixed(1)} Pages`;
+    return value.toFixed(2);
   }
+
+  /**
+   * Today's date for the minimum deadline.
+   */
+  const today =
+    new Date()
+      .toISOString()
+      .split("T")[0];
 
   return (
     <motion.div
@@ -304,10 +312,10 @@ export default function HeroCalculator() {
             Calculate Your Price
           </h2>
 
-          <p className="section-subtitle mt-2 leading-6 sm:mt-3 sm:leading-7">
-            Get an instant quotation based on
-            your academic level, deadline and
-            work size.
+          <p className="section-subtitle mt-3 leading-7">
+            Receive an instant quotation based on
+            your academic level, deadline and work
+            size before placing your order.
           </p>
         </div>
 
@@ -335,7 +343,7 @@ export default function HeroCalculator() {
               setPricing(null);
               setError("");
             }}
-            className="select"
+            className="select w-full"
           >
             <option value="">
               Select Academic Level
@@ -353,11 +361,16 @@ export default function HeroCalculator() {
               Masters
             </option>
           </select>
+
+          <p className="mt-2 text-xs text-slate-500">
+            Pricing is determined by the backend
+            pricing engine.
+          </p>
         </div>
 
         {/* Deadline */}
 
-        <div className="mt-5 sm:mt-6">
+        <div className="mt-6">
           <label className="mb-2 flex items-center gap-2 text-sm font-semibold">
             <Calendar
               size={18}
@@ -370,9 +383,7 @@ export default function HeroCalculator() {
           <input
             type="date"
             value={deadline}
-            min={new Date()
-              .toISOString()
-              .split("T")[0]}
+            min={today}
             onChange={(e) => {
               setDeadline(
                 e.target.value
@@ -381,13 +392,17 @@ export default function HeroCalculator() {
               setPricing(null);
               setError("");
             }}
-            className="input"
+            className="input w-full"
           />
+
+          <p className="mt-2 text-xs text-slate-500">
+            Select the date you need the work.
+          </p>
         </div>
 
         {/* Work Size */}
 
-        <div className="card mt-6 rounded-2xl bg-slate-50/70 p-5 sm:mt-8 sm:p-6">
+        <div className="card mt-6 rounded-2xl bg-slate-50/70 p-5 sm:mt-8 sm:p-6 dark:bg-slate-800/40">
           <div className="flex items-center gap-2">
             <BookOpen
               size={20}
@@ -400,9 +415,8 @@ export default function HeroCalculator() {
           </div>
 
           <p className="card-text mt-2 text-sm">
-            Choose whether your assignment
-            will be measured in pages or
-            words.
+            Choose whether your assignment will
+            be measured in pages or words.
           </p>
 
           {/* Pages / Words */}
@@ -418,7 +432,7 @@ export default function HeroCalculator() {
               className={`py-3 text-sm font-semibold transition-all ${
                 workType === "pages"
                   ? "bg-blue-600 text-white"
-                  : "bg-white text-slate-700 hover:bg-slate-100 dark:bg-slate-900 dark:text-slate-300"
+                  : "bg-white text-slate-700 hover:bg-slate-100 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
               }`}
             >
               Pages
@@ -434,7 +448,7 @@ export default function HeroCalculator() {
               className={`py-3 text-sm font-semibold transition-all ${
                 workType === "words"
                   ? "bg-blue-600 text-white"
-                  : "bg-white text-slate-700 hover:bg-slate-100 dark:bg-slate-900 dark:text-slate-300"
+                  : "bg-white text-slate-700 hover:bg-slate-100 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
               }`}
             >
               Words
@@ -458,7 +472,7 @@ export default function HeroCalculator() {
                 setPricing(null);
                 setError("");
               }}
-              className="select"
+              className="select w-full"
             >
               <option value="Double">
                 Double
@@ -491,6 +505,7 @@ export default function HeroCalculator() {
             <input
               type="number"
               min="1"
+              step="1"
               value={quantity}
               onChange={(e) => {
                 setQuantity(
@@ -505,23 +520,62 @@ export default function HeroCalculator() {
                   ? "Enter number of pages"
                   : "Enter number of words"
               }
-              className="input"
+              className="input w-full"
             />
 
-            {/* Conversion */}
+            {/* Word/Page conversion */}
 
             <motion.div
-              key={`${quantity}-${spacing}-${workType}`}
-              initial={{
-                opacity: 0.5,
-              }}
               animate={{
-                opacity: 1,
+                opacity: [
+                  0.7,
+                  1,
+                  0.7,
+                ],
               }}
-              className="mt-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 dark:border-blue-800 dark:bg-blue-950/40"
+              transition={{
+                repeat: Infinity,
+                duration: 3,
+              }}
+              className="mt-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 dark:border-blue-800 dark:bg-blue-950/40"
             >
               <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                {getConversionText()}
+                {quantity === ""
+                  ? workType === "pages"
+                    ? "1 Page ≈ 275 Words (Double Spacing)"
+                    : "275 Words ≈ 1 Page (Double Spacing)"
+                  : workType === "pages"
+                  ? `≈ ${
+                      spacing === "Double"
+                        ? Number(quantity) *
+                          275
+                        : spacing ===
+                          "1.5 Spacing"
+                        ? Number(quantity) *
+                          365
+                        : Number(quantity) *
+                          550
+                    } Words`
+                  : `≈ ${
+                      spacing === "Double"
+                        ? (
+                            Number(
+                              quantity
+                            ) / 275
+                          ).toFixed(1)
+                        : spacing ===
+                          "1.5 Spacing"
+                        ? (
+                            Number(
+                              quantity
+                            ) / 365
+                          ).toFixed(1)
+                        : (
+                            Number(
+                              quantity
+                            ) / 550
+                          ).toFixed(1)
+                    } Pages`}
               </p>
             </motion.div>
           </div>
@@ -530,154 +584,234 @@ export default function HeroCalculator() {
         {/* Error */}
 
         {error && (
-          <div className="mt-5 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600 dark:border-red-900 dark:bg-red-950/30 dark:text-red-400">
+          <div className="mt-5 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600 dark:border-red-900 dark:bg-red-950/30 dark:text-red-400">
             <Info
               size={18}
               className="mt-0.5 shrink-0"
             />
 
-            <span>{error}</span>
+            <span>
+              {error}
+            </span>
           </div>
         )}
 
         {/* Estimated Price */}
 
         <motion.div
+          whileHover={{
+            scale: 1.01,
+          }}
           transition={{
             duration: 0.25,
           }}
-          className="card mt-6 border-blue-200 bg-gradient-to-br from-blue-50 via-white to-slate-50 p-5 dark:border-blue-900 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 sm:mt-8 sm:p-7"
+          className="card mt-6 border-blue-200 bg-gradient-to-br from-blue-50 via-white to-slate-50 p-5 sm:mt-8 sm:p-7 dark:border-blue-900 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950"
         >
           <div>
-            <h3 className="card-title text-xl sm:text-2xl">
+            <h3 className="card-title">
               Estimated Price
             </h3>
 
             <p className="card-text mt-2 text-sm">
-              Your quotation will appear here
-              after the backend pricing engine
+              Your quotation will automatically
+              appear here once the pricing engine
               calculates your order.
             </p>
           </div>
 
-          {loading ? (
-            <motion.div
-              initial={{
-                opacity: 0,
-              }}
-              animate={{
-                opacity: 1,
-              }}
-              className="card mt-5 rounded-2xl p-6 text-center"
-            >
-              <Loader2
-                size={36}
-                className="mx-auto animate-spin text-blue-600"
-              />
+          {pricing ? (
+            pricing.requires_admin_review ? (
+              /* Technical/Admin Review */
 
-              <p className="card-text mt-3 text-sm">
-                Calculating your price...
-              </p>
-            </motion.div>
-          ) : pricing ? (
-            <motion.div
-              initial={{
-                opacity: 0,
-                y: 10,
-              }}
-              animate={{
-                opacity: 1,
-                y: 0,
-              }}
-              className="card mt-5 rounded-2xl p-5 sm:p-6"
-            >
-              <div className="text-center">
-                <p className="card-text text-sm">
-                  Estimated Total
-                </p>
-
-                <div className="mt-2 text-4xl font-black tracking-wide text-blue-600 dark:text-blue-400 sm:text-5xl">
-                  {pricing.currency}{" "}
-                  {pricing.total_converted}
-                </div>
-
-                <div className="mt-5 grid grid-cols-2 gap-3 sm:gap-4">
-                  <div className="rounded-xl bg-blue-50 p-3 dark:bg-blue-950/40">
-                    <p className="text-xs font-medium text-slate-500">
-                      Price / Page
-                    </p>
-
-                    <p className="mt-1 text-lg font-bold text-blue-600">
-                      $
-                      {Number(
-                        pricing.price_per_page_usd
-                      ).toFixed(2)}
-                    </p>
-                  </div>
-
-                  <div className="rounded-xl bg-green-50 p-3 dark:bg-green-950/40">
-                    <p className="text-xs font-medium text-slate-500">
-                      60% Deposit
-                    </p>
-
-                    <p className="mt-1 text-lg font-bold text-green-600">
-                      {pricing.currency}{" "}
-                      {pricing.deposit_converted}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-4 flex items-start gap-2 rounded-xl border border-blue-100 bg-blue-50/50 p-3 text-left dark:border-blue-900 dark:bg-blue-950/20">
+              <motion.div
+                initial={{
+                  opacity: 0,
+                  y: 10,
+                }}
+                animate={{
+                  opacity: 1,
+                  y: 0,
+                }}
+                className="mt-6 rounded-2xl border border-orange-200 bg-orange-50 p-5 dark:border-orange-900 dark:bg-orange-950/30"
+              >
+                <div className="flex items-start gap-3">
                   <Info
-                    size={16}
-                    className="mt-0.5 shrink-0 text-blue-600"
+                    size={21}
+                    className="mt-0.5 shrink-0 text-orange-600"
                   />
 
-                  <p className="text-xs leading-5 text-slate-600 dark:text-slate-400">
-                    The price above was calculated
-                    by our server using your
-                    academic level, work size and
-                    deadline. A 60% deposit is
-                    required.
-                  </p>
+                  <div>
+                    <h4 className="font-bold text-orange-900 dark:text-orange-300">
+                      Price provided after admin review
+                    </h4>
+
+                    <p className="mt-2 text-sm leading-6 text-orange-800 dark:text-orange-200">
+                      This request requires
+                      administrative review. Please
+                      provide all necessary materials
+                      and requirements. Our admin team
+                      will review the work and provide
+                      the final price.
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </motion.div>
+              </motion.div>
+            ) : (
+              /* Normal Pricing */
+
+              <motion.div
+                initial={{
+                  opacity: 0,
+                  y: 10,
+                }}
+                animate={{
+                  opacity: 1,
+                  y: 0,
+                }}
+                className="card mt-6 rounded-2xl p-5 sm:p-6"
+              >
+                <div className="text-center">
+                  <p className="card-text text-sm">
+                    Estimated Total
+                  </p>
+
+                  <div className="mt-2 text-4xl font-black tracking-wide text-blue-600 sm:text-5xl dark:text-blue-400">
+                    {pricing.total_converted ??
+                      `$${formatMoney(
+                        pricing.total_usd
+                      )}`}
+                  </div>
+
+                  <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+                    {/* Price Per Page */}
+
+                    <div className="rounded-xl bg-blue-50 p-3 dark:bg-blue-950/40">
+                      <p className="text-xs font-medium text-slate-500">
+                        Price / Page
+                      </p>
+
+                      <p className="mt-1 text-lg font-bold text-blue-600">
+                        $
+                        {formatMoney(
+                          pricing.price_per_page_usd
+                        )}
+                      </p>
+                    </div>
+
+                    {/* Deposit */}
+
+                    <div className="rounded-xl bg-green-50 p-3 dark:bg-green-950/40">
+                      <p className="text-xs font-medium text-slate-500">
+                        60% Deposit
+                      </p>
+
+                      <p className="mt-1 text-lg font-bold text-green-600">
+                        {pricing.deposit_converted ??
+                          `$${formatMoney(
+                            pricing.deposit_usd
+                          )}`}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Balance */}
+
+                  {pricing.balance_usd !==
+                    undefined &&
+                    pricing.balance_usd !==
+                      null && (
+                      <div className="mt-3 rounded-xl bg-slate-50 p-3 dark:bg-slate-800">
+                        <p className="text-xs font-medium text-slate-500">
+                          Remaining Balance
+                        </p>
+
+                        <p className="mt-1 text-lg font-bold text-slate-700 dark:text-slate-200">
+                          {pricing.balance_converted ??
+                            `$${formatMoney(
+                              pricing.balance_usd
+                            )}`}
+                        </p>
+                      </div>
+                    )}
+
+                  <div className="mt-4 flex items-start gap-2 text-left">
+                    <Info
+                      size={15}
+                      className="mt-0.5 shrink-0 text-blue-600"
+                    />
+
+                    <p className="card-text text-xs leading-5">
+                      This quotation is calculated by
+                      our backend pricing engine. The
+                      required deposit is 60% of the
+                      calculated total.
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            )
           ) : (
-            <div className="card mt-5 rounded-2xl p-6 text-center">
-              <div className="text-4xl font-black tracking-wide text-blue-600 dark:text-blue-400">
+            <motion.div
+              animate={{
+                opacity: [
+                  0.6,
+                  1,
+                  0.6,
+                ],
+              }}
+              transition={{
+                repeat: Infinity,
+                duration: 2.5,
+              }}
+              className="card mt-6 rounded-2xl p-7 text-center"
+            >
+              <div className="text-4xl font-black tracking-wide text-blue-600 sm:text-5xl dark:text-blue-400">
                 ---
               </div>
 
               <p className="card-text mt-3 text-sm">
-                Enter your details and calculate
-                your price.
+                Select your academic level,
+                deadline and work size, then
+                calculate your price.
               </p>
-            </div>
+            </motion.div>
           )}
         </motion.div>
 
-        {/* Calculate */}
+        {/* Calculate Button */}
 
         <motion.button
           type="button"
           onClick={handleCalculatePrice}
           disabled={loading}
           whileHover={{
-            scale: loading ? 1 : 1.02,
+            scale: loading
+              ? 1
+              : 1.02,
           }}
           whileTap={{
-            scale: loading ? 1 : 0.98,
+            scale: loading
+              ? 1
+              : 0.98,
           }}
-          className={`btn-primary mt-6 w-full py-4 text-base sm:mt-8 sm:text-lg ${
+          className={`btn-primary mt-6 flex w-full items-center justify-center gap-2 py-4 text-base sm:mt-8 sm:text-lg ${
             loading
               ? "cursor-not-allowed opacity-70"
               : ""
           }`}
         >
-          {loading
-            ? "Calculating..."
-            : "Calculate Price"}
+          {loading ? (
+            <>
+              <Loader2
+                size={19}
+                className="animate-spin"
+              />
+
+              Calculating...
+            </>
+          ) : (
+            "Calculate Price"
+          )}
         </motion.button>
       </motion.div>
     </motion.div>
