@@ -19,7 +19,9 @@ export default function Hero() {
 
         <div className="absolute right-[-120px] bottom-[-120px] h-[350px] w-[350px] rounded-full bg-orange-200/20 blur-3xl"></div>
 
-        <div className="container relative mx-auto max-w-7xl px-6 pt-40 pb-24">
+        {/* Hero Content */}
+
+        <div className="container relative mx-auto max-w-7xl px-6 !pt-[180px] pb-24 sm:!pt-[160px] lg:!pt-[190px]">
 
           <div className="grid items-start gap-16 lg:grid-cols-2">
 
@@ -40,7 +42,6 @@ export default function Hero() {
       <Testimonials />
       <FAQ />
       <CTA />
-
     </>
   );
 }
