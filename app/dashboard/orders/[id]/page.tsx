@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
 import orderService from "@/services/orderService";
-import { Order } from "@/types/order";
+import type { Order } from "@/types/order";
 
 import OrderHeader from "@/components/orders/OrderHeader";
 import OrderStatusCard from "@/components/orders/OrderStatusCard";

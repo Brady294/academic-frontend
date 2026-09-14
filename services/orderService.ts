@@ -1,55 +1,6 @@
 import axios from "@/lib/axios";
+import type { Order } from "@/types/order";
 
-/**
- * Order returned by the backend.
- */
-export interface Order {
-  id: number;
-  user_id: number;
-
-  title: string;
-  subject: string;
-  service_type: string;
-  academic_level: string;
-
-  pages: number;
-  spacing: string;
-  citation_style: string;
-
-  deadline: string;
-  instructions: string;
-
-  /**
-   * Price calculated by the backend.
-   *
-   * This may be 0/null for technical orders
-   * until an administrator provides the final price.
-   */
-  budget: number | null;
-
-  /**
-   * Optional backend pricing fields.
-   */
-  deposit?: number | null;
-  price_per_page?: number | null;
-  is_technical?: boolean;
-
-  status: string;
-
-  created_at: string;
-  updated_at: string;
-}
-
-/**
- * Payload sent from the frontend when creating
- * an order.
- *
- * IMPORTANT:
- * There is intentionally NO budget field here.
- *
- * The backend is responsible for calculating
- * the price.
- */
 export interface CreateOrderPayload {
   title: string;
   subject: string;
@@ -60,14 +11,19 @@ export interface CreateOrderPayload {
   citation_style: string;
   deadline: string;
   instructions: string;
+
+  /**
+   * Backend controls the final price.
+   *
+   * For technical/programming orders this can be null
+   * until the admin reviews the order.
+   */
+  budget?: number | null;
 }
 
 /**
  * Payload used by the public homepage
  * price calculator.
- *
- * Keep this only if your homepage still uses
- * the public price preview endpoint.
  */
 export interface PricePreviewPayload {
   pages: number;
@@ -102,12 +58,8 @@ const orderService = {
   /**
    * GET SINGLE ORDER
    */
-  async getOrder(
-    id: string | number
-  ): Promise<Order> {
-    const response = await axios.get(
-      `/orders/${id}`
-    );
+  async getOrder(id: string | number): Promise<Order> {
+    const response = await axios.get(`/orders/${id}`);
 
     return response.data;
   },
@@ -115,18 +67,11 @@ const orderService = {
   /**
    * CREATE ORDER
    *
-   * IMPORTANT:
-   * No budget is sent from the frontend.
-   *
-   * The backend calculates the price.
+   * The backend is responsible for calculating
+   * the final price.
    */
-  async createOrder(
-    data: CreateOrderPayload
-  ) {
-    const response = await axios.post(
-      "/orders",
-      data
-    );
+  async createOrder(data: CreateOrderPayload) {
+    const response = await axios.post("/orders", data);
 
     return response.data;
   },
@@ -138,10 +83,7 @@ const orderService = {
     id: string | number,
     data: Partial<CreateOrderPayload>
   ) {
-    const response = await axios.put(
-      `/orders/${id}`,
-      data
-    );
+    const response = await axios.put(`/orders/${id}`, data);
 
     return response.data;
   },
@@ -149,12 +91,8 @@ const orderService = {
   /**
    * DELETE ORDER
    */
-  async deleteOrder(
-    id: string | number
-  ) {
-    const response = await axios.delete(
-      `/orders/${id}`
-    );
+  async deleteOrder(id: string | number) {
+    const response = await axios.delete(`/orders/${id}`);
 
     return response.data;
   },
@@ -162,11 +100,8 @@ const orderService = {
   /**
    * PUBLIC PRICE PREVIEW
    *
-   * This is separate from creating an order.
-   *
-   * If you want the backend to be the ONLY place
-   * calculating prices, you can remove this method
-   * from the frontend entirely.
+   * This can remain available if your homepage
+   * still uses the public price calculator.
    */
   async previewPrice(
     data: PricePreviewPayload
