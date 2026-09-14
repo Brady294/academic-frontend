@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 
 import Sidebar from "./Sidebar";
 import TopNavbar from "./TopNavbar";
@@ -10,18 +10,23 @@ interface Props {
 }
 
 export default function DashboardLayout({ children }: Props) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-slate-50">
-      <div className="flex min-h-screen">
-        {/* Desktop Sidebar */}
-        <Sidebar />
+      <Sidebar
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
 
-        {/* Main Application */}
-        <main className="flex min-w-0 flex-1 flex-col">
-          <TopNavbar />
+      <div className="min-h-screen lg:pl-72">
+        <TopNavbar
+          onMenuClick={() => setSidebarOpen(true)}
+        />
 
-          <section className="flex-1 overflow-y-auto">
-            <div className="mx-auto w-full max-w-[1600px] p-4 sm:p-6 lg:p-8">
+        <main className="min-h-[calc(100vh-5rem)]">
+          <section className="px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
+            <div className="mx-auto w-full max-w-[1600px]">
               {children}
             </div>
           </section>

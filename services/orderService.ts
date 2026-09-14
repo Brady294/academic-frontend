@@ -1,23 +1,55 @@
 import axios from "@/lib/axios";
 
+/**
+ * Order returned by the backend.
+ */
 export interface Order {
   id: number;
   user_id: number;
+
   title: string;
   subject: string;
   service_type: string;
   academic_level: string;
+
   pages: number;
   spacing: string;
   citation_style: string;
+
   deadline: string;
   instructions: string;
-  budget: number;
+
+  /**
+   * Price calculated by the backend.
+   *
+   * This may be 0/null for technical orders
+   * until an administrator provides the final price.
+   */
+  budget: number | null;
+
+  /**
+   * Optional backend pricing fields.
+   */
+  deposit?: number | null;
+  price_per_page?: number | null;
+  is_technical?: boolean;
+
   status: string;
+
   created_at: string;
   updated_at: string;
 }
 
+/**
+ * Payload sent from the frontend when creating
+ * an order.
+ *
+ * IMPORTANT:
+ * There is intentionally NO budget field here.
+ *
+ * The backend is responsible for calculating
+ * the price.
+ */
 export interface CreateOrderPayload {
   title: string;
   subject: string;
@@ -28,12 +60,14 @@ export interface CreateOrderPayload {
   citation_style: string;
   deadline: string;
   instructions: string;
-  budget: number;
 }
 
 /**
  * Payload used by the public homepage
  * price calculator.
+ *
+ * Keep this only if your homepage still uses
+ * the public price preview endpoint.
  */
 export interface PricePreviewPayload {
   pages: number;
@@ -80,6 +114,11 @@ const orderService = {
 
   /**
    * CREATE ORDER
+   *
+   * IMPORTANT:
+   * No budget is sent from the frontend.
+   *
+   * The backend calculates the price.
    */
   async createOrder(
     data: CreateOrderPayload
@@ -123,9 +162,11 @@ const orderService = {
   /**
    * PUBLIC PRICE PREVIEW
    *
-   * This does NOT require login.
+   * This is separate from creating an order.
    *
-   * Used by the homepage calculator.
+   * If you want the backend to be the ONLY place
+   * calculating prices, you can remove this method
+   * from the frontend entirely.
    */
   async previewPrice(
     data: PricePreviewPayload
