@@ -13,6 +13,20 @@ import { useDashboard } from "@/contexts/DashboardContext";
 export default function DashboardStats() {
   const { stats, loading } = useDashboard();
 
+  /*
+   * pendingOrders is calculated from the values already provided
+   * by DashboardContext.
+   *
+   * This prevents TypeScript errors if DashboardStats does not
+   * currently define a pendingOrders property.
+   */
+  const pendingOrders = Math.max(
+    0,
+    stats.totalOrders -
+      stats.activeOrders -
+      stats.completedOrders
+  );
+
   const cards = [
     {
       title: "Total Orders",
@@ -40,7 +54,7 @@ export default function DashboardStats() {
     },
     {
       title: "Pending Orders",
-      value: stats.pendingOrders,
+      value: pendingOrders,
       description: "Orders awaiting progress",
       icon: ClipboardList,
       iconClass: "bg-purple-50 text-purple-600",
@@ -89,7 +103,10 @@ export default function DashboardStats() {
                   ${card.iconClass}
                 `}
               >
-                <Icon size={22} strokeWidth={2} />
+                <Icon
+                  size={22}
+                  strokeWidth={2}
+                />
               </div>
 
               <ArrowUpRight
