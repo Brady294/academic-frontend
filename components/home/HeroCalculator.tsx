@@ -363,8 +363,7 @@ export default function HeroCalculator() {
           </select>
 
           <p className="mt-2 text-xs text-slate-500">
-            Pricing is determined by the backend
-            pricing engine.
+            Provide neccesary information to determine the price
           </p>
         </div>
 
@@ -614,8 +613,7 @@ export default function HeroCalculator() {
 
             <p className="card-text mt-2 text-sm">
               Your quotation will automatically
-              appear here once the pricing engine
-              calculates your order.
+              appear.
             </p>
           </div>
 
@@ -740,12 +738,8 @@ export default function HeroCalculator() {
                       className="mt-0.5 shrink-0 text-blue-600"
                     />
 
-                    <p className="card-text text-xs leading-5">
-                      This quotation is calculated by
-                      our backend pricing engine. The
-                      required deposit is 60% of the
-                      calculated total.
-                    </p>
+                    
+                    
                   </div>
                 </div>
               </motion.div>
