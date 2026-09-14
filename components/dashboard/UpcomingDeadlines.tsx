@@ -2,67 +2,82 @@
 
 import Link from "next/link";
 import {
+  ArrowRight,
   CalendarClock,
-  ChevronRight,
   Clock,
+  FileText,
 } from "lucide-react";
 
 import { useDashboard } from "@/contexts/DashboardContext";
 
-function getRemaining(deadline: string) {
-  const today = new Date();
+function getDeadlineInfo(deadline: string) {
+  const now = new Date();
+  const dueDate = new Date(deadline);
 
-  const due = new Date(deadline);
+  const difference = dueDate.getTime() - now.getTime();
 
-  const diff = due.getTime() - today.getTime();
+  const hours = Math.ceil(
+    difference / (1000 * 60 * 60)
+  );
 
-  const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-
-  if (days < 0) {
+  if (difference < 0) {
     return {
-      text: "Overdue",
-      color: "text-red-600",
-      badge: "bg-red-100 text-red-700",
+      label: "Overdue",
+      badge: "bg-red-50 text-red-700 border-red-100",
+      icon: "text-red-600",
     };
   }
 
-  if (days === 0) {
+  if (hours <= 24) {
     return {
-      text: "Today",
-      color: "text-red-600",
-      badge: "bg-red-100 text-red-700",
+      label: "Due today",
+      badge: "bg-red-50 text-red-700 border-red-100",
+      icon: "text-red-600",
     };
   }
+
+  const days = Math.ceil(hours / 24);
 
   if (days === 1) {
     return {
-      text: "Tomorrow",
-      color: "text-orange-600",
-      badge: "bg-orange-100 text-orange-700",
+      label: "Due tomorrow",
+      badge: "bg-orange-50 text-orange-700 border-orange-100",
+      icon: "text-orange-600",
     };
   }
 
   if (days <= 3) {
     return {
-      text: `${days} Days Left`,
-      color: "text-orange-600",
-      badge: "bg-orange-100 text-orange-700",
+      label: `${days} days left`,
+      badge: "bg-orange-50 text-orange-700 border-orange-100",
+      icon: "text-orange-600",
     };
   }
 
   if (days <= 7) {
     return {
-      text: `${days} Days Left`,
-      color: "text-blue-600",
-      badge: "bg-blue-100 text-blue-700",
+      label: `${days} days left`,
+      badge: "bg-blue-50 text-blue-700 border-blue-100",
+      icon: "text-blue-600",
     };
   }
 
   return {
-    text: `${days} Days Left`,
-    color: "text-green-600",
-    badge: "bg-green-100 text-green-700",
+    label: `${days} days left`,
+    badge: "bg-green-50 text-green-700 border-green-100",
+    icon: "text-green-600",
   };
+}
+
+function formatDeadline(deadline: string) {
+  const date = new Date(deadline);
+
+  return date.toLocaleDateString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
 export default function UpcomingDeadlines() {
@@ -74,30 +89,48 @@ export default function UpcomingDeadlines() {
   return (
     <section className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm">
 
-      <div className="flex items-center justify-between border-b border-gray-100 px-6 py-5">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-gray-100 px-5 py-5 sm:px-6">
 
-        <div>
+        <div className="flex items-start gap-3">
 
-          <h2 className="text-xl font-bold">
-            Upcoming Deadlines
-          </h2>
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+            <CalendarClock size={21} />
+          </div>
 
-          <p className="mt-1 text-sm text-gray-500">
-            Keep track of assignments that require your attention.
-          </p>
+          <div>
+            <h2 className="text-lg font-bold text-gray-900 sm:text-xl">
+              Upcoming Deadlines
+            </h2>
+
+            <p className="mt-1 text-sm text-gray-500">
+              Assignments that need your attention.
+            </p>
+          </div>
 
         </div>
 
+        {upcomingDeadlines.length > 0 && (
+          <Link
+            href="/dashboard/orders"
+            className="hidden items-center gap-1 text-sm font-semibold text-blue-600 transition hover:text-blue-700 sm:flex"
+          >
+            View Orders
+            <ArrowRight size={16} />
+          </Link>
+        )}
+
       </div>
 
+      {/* Loading */}
       {loading ? (
 
-        <div className="space-y-4 p-6">
+        <div className="space-y-3 p-5 sm:p-6">
 
-          {[...Array(5)].map((_, index) => (
+          {[1, 2, 3].map((item) => (
             <div
-              key={index}
-              className="h-20 animate-pulse rounded-2xl bg-gray-100"
+              key={item}
+              className="h-24 animate-pulse rounded-2xl bg-gray-100"
             />
           ))}
 
@@ -105,75 +138,111 @@ export default function UpcomingDeadlines() {
 
       ) : upcomingDeadlines.length === 0 ? (
 
-        <div className="flex flex-col items-center justify-center px-8 py-20 text-center">
+        /* Empty State */
+        <div className="px-6 py-14 text-center sm:py-16">
 
-          <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-green-50">
             <CalendarClock
-              size={30}
+              size={27}
               className="text-green-600"
             />
-
           </div>
 
-          <h3 className="text-lg font-semibold">
-            No Upcoming Deadlines
+          <h3 className="mt-4 text-base font-semibold text-gray-900">
+            You're all caught up
           </h3>
 
-          <p className="mt-2 max-w-sm text-gray-500">
-            You're all caught up. Future assignment deadlines will appear here.
+          <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-gray-500">
+            You don't have any upcoming assignment deadlines.
+            New deadlines will appear here automatically.
           </p>
 
         </div>
 
       ) : (
 
+        /* Deadline List */
         <div className="divide-y divide-gray-100">
 
           {upcomingDeadlines.map((order) => {
-            const remaining = getRemaining(order.deadline);
+
+            const deadline = getDeadlineInfo(
+              order.deadline
+            );
 
             return (
               <Link
                 key={order.id}
                 href={`/dashboard/orders/${order.id}`}
-                className="flex items-center justify-between px-6 py-5 transition hover:bg-gray-50"
+                className="group block px-5 py-5 transition hover:bg-gray-50 sm:px-6"
               >
 
-                <div className="min-w-0 flex-1">
+                <div className="flex items-start gap-4">
 
-                  <div className="flex flex-wrap items-center gap-3">
+                  {/* Assignment Icon */}
+                  <div className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gray-50 text-gray-500 sm:flex">
+                    <FileText size={20} />
+                  </div>
 
-                    <h3 className="truncate font-semibold text-gray-900">
-                      {order.title}
-                    </h3>
+                  {/* Main Content */}
+                  <div className="min-w-0 flex-1">
 
-                    <span
-                      className={`rounded-full px-3 py-1 text-xs font-semibold ${remaining.badge}`}
-                    >
-                      {remaining.text}
-                    </span>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+
+                      <div className="min-w-0">
+
+                        <h3 className="truncate font-semibold text-gray-900 transition group-hover:text-blue-600">
+                          {order.title}
+                        </h3>
+
+                        {order.subject && (
+                          <p className="mt-1 truncate text-sm text-gray-500">
+                            {order.subject}
+                          </p>
+                        )}
+
+                      </div>
+
+                      {/* Deadline Badge */}
+                      <span
+                        className={`w-fit shrink-0 rounded-full border px-3 py-1 text-xs font-semibold ${deadline.badge}`}
+                      >
+                        {deadline.label}
+                      </span>
+
+                    </div>
+
+                    {/* Deadline Date */}
+                    <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-gray-500 sm:text-sm">
+
+                      <span className="flex items-center gap-1.5">
+                        <Clock
+                          size={14}
+                          className={deadline.icon}
+                        />
+
+                        {formatDeadline(order.deadline)}
+                      </span>
+
+                      <span className="hidden text-gray-300 sm:inline">
+                        •
+                      </span>
+
+                      <span className="capitalize">
+                        {order.status}
+                      </span>
+
+                    </div>
 
                   </div>
 
-                  <p className="mt-2 text-sm text-gray-500">
-                    {order.subject}
-                  </p>
-
-                  <div className="mt-3 flex items-center gap-2 text-sm text-gray-500">
-
-                    <Clock size={15} />
-
-                    {new Date(order.deadline).toLocaleString()}
-
-                  </div>
+                  {/* Arrow */}
+                  <ArrowRight
+                    size={18}
+                    className="mt-1 hidden shrink-0 text-gray-300 transition-all group-hover:translate-x-1 group-hover:text-blue-600 sm:block"
+                  />
 
                 </div>
-
-                <ChevronRight
-                  size={20}
-                  className="ml-6 text-gray-400"
-                />
 
               </Link>
             );
@@ -181,6 +250,21 @@ export default function UpcomingDeadlines() {
 
         </div>
 
+      )}
+
+      {/* Mobile View Orders */}
+      {!loading && upcomingDeadlines.length > 0 && (
+        <div className="border-t border-gray-100 p-4 sm:hidden">
+
+          <Link
+            href="/dashboard/orders"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gray-50 px-4 py-3 text-sm font-semibold text-blue-600 transition hover:bg-blue-50"
+          >
+            View All Orders
+            <ArrowRight size={16} />
+          </Link>
+
+        </div>
       )}
 
     </section>

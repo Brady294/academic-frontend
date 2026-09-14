@@ -9,26 +9,24 @@ interface Props {
   children: ReactNode;
 }
 
-export default function DashboardLayout({
-  children,
-}: Props) {
+export default function DashboardLayout({ children }: Props) {
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50">
+      <div className="flex min-h-screen">
+        {/* Desktop Sidebar */}
+        <Sidebar />
 
-      <Sidebar />
+        {/* Main Application */}
+        <main className="flex min-w-0 flex-1 flex-col">
+          <TopNavbar />
 
-      <main className="flex-1 flex flex-col">
-
-        <TopNavbar />
-
-        <section className="flex-1 p-8 overflow-y-auto">
-
-          {children}
-
-        </section>
-
-      </main>
-
+          <section className="flex-1 overflow-y-auto">
+            <div className="mx-auto w-full max-w-[1600px] p-4 sm:p-6 lg:p-8">
+              {children}
+            </div>
+          </section>
+        </main>
+      </div>
     </div>
   );
 }
