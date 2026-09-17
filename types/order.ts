@@ -11,7 +11,26 @@ export interface Order {
   spacing: string;
   citation_style: string;
 
+  /**
+   * Deadline stored by the backend.
+   *
+   * The deadline should represent an absolute point in time
+   * (preferably an ISO timestamp).
+   */
   deadline: string;
+
+  /**
+   * IANA timezone selected or detected when the order
+   * was created.
+   *
+   * Examples:
+   * Africa/Nairobi
+   * America/New_York
+   * Europe/London
+   * Asia/Dubai
+   */
+  timezone: string | null;
+
   instructions: string;
 
   /**

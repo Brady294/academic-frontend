@@ -1,12 +1,11 @@
 "use client";
 
 import {
-  AlignLeft,
   BookOpen,
- CalendarClock,
+  CalendarClock,
   FileText,
   GraduationCap,
- Quote,
+  Quote,
   Ruler,
 } from "lucide-react";
 
@@ -97,6 +96,7 @@ export default function OrderDetailsCard({
                 key={item.label}
                 className="group rounded-xl border border-gray-200 p-3 transition-all duration-200 hover:border-blue-200 hover:shadow-sm"
               >
+
                 <div className="flex items-start gap-3">
 
                   <div
@@ -129,6 +129,8 @@ export default function OrderDetailsCard({
 
         <div className="grid gap-3 md:grid-cols-2">
 
+          {/* Deadline */}
+
           <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
 
             <div className="flex items-center gap-3">
@@ -151,7 +153,13 @@ export default function OrderDetailsCard({
                 <p className="mt-1 text-sm font-semibold text-gray-900">
                   {new Date(
                     order.deadline
-                  ).toLocaleString()}
+                  ).toLocaleString(
+                    undefined,
+                    {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    }
+                  )}
                 </p>
 
               </div>
@@ -159,6 +167,8 @@ export default function OrderDetailsCard({
             </div>
 
           </div>
+
+          {/* Order Created */}
 
           <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
 

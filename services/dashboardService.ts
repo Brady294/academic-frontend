@@ -8,6 +8,7 @@ export interface DashboardStatOrder {
   budget?: number;
   status: string;
   deadline: string;
+  client_timezone?: string;
   created_at?: string;
 }
 

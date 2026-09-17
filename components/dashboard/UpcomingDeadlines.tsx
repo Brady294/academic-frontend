@@ -14,7 +14,8 @@ function getDeadlineInfo(deadline: string) {
   const now = new Date();
   const dueDate = new Date(deadline);
 
-  const difference = dueDate.getTime() - now.getTime();
+  const difference =
+    dueDate.getTime() - now.getTime();
 
   const hours = Math.ceil(
     difference / (1000 * 60 * 60)
@@ -23,7 +24,8 @@ function getDeadlineInfo(deadline: string) {
   if (difference < 0) {
     return {
       label: "Overdue",
-      badge: "bg-red-50 text-red-700 border-red-100",
+      badge:
+        "bg-red-50 text-red-700 border-red-100",
       icon: "text-red-600",
     };
   }
@@ -31,7 +33,8 @@ function getDeadlineInfo(deadline: string) {
   if (hours <= 24) {
     return {
       label: "Due today",
-      badge: "bg-red-50 text-red-700 border-red-100",
+      badge:
+        "bg-red-50 text-red-700 border-red-100",
       icon: "text-red-600",
     };
   }
@@ -41,7 +44,8 @@ function getDeadlineInfo(deadline: string) {
   if (days === 1) {
     return {
       label: "Due tomorrow",
-      badge: "bg-orange-50 text-orange-700 border-orange-100",
+      badge:
+        "bg-orange-50 text-orange-700 border-orange-100",
       icon: "text-orange-600",
     };
   }
@@ -49,7 +53,8 @@ function getDeadlineInfo(deadline: string) {
   if (days <= 3) {
     return {
       label: `${days} days left`,
-      badge: "bg-orange-50 text-orange-700 border-orange-100",
+      badge:
+        "bg-orange-50 text-orange-700 border-orange-100",
       icon: "text-orange-600",
     };
   }
@@ -57,19 +62,24 @@ function getDeadlineInfo(deadline: string) {
   if (days <= 7) {
     return {
       label: `${days} days left`,
-      badge: "bg-blue-50 text-blue-700 border-blue-100",
+      badge:
+        "bg-blue-50 text-blue-700 border-blue-100",
       icon: "text-blue-600",
     };
   }
 
   return {
     label: `${days} days left`,
-    badge: "bg-green-50 text-green-700 border-green-100",
+    badge:
+      "bg-green-50 text-green-700 border-green-100",
     icon: "text-green-600",
   };
 }
 
-function formatDeadline(deadline: string) {
+function formatDeadline(
+  deadline: string,
+  timezone?: string
+) {
   const date = new Date(deadline);
 
   return date.toLocaleDateString(undefined, {
@@ -77,6 +87,7 @@ function formatDeadline(deadline: string) {
     month: "short",
     day: "numeric",
     year: "numeric",
+    timeZone: timezone || undefined,
   });
 }
 
@@ -90,6 +101,7 @@ export default function UpcomingDeadlines() {
     <section className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm">
 
       {/* Header */}
+
       <div className="flex items-center justify-between border-b border-gray-100 px-5 py-5 sm:px-6">
 
         <div className="flex items-start gap-3">
@@ -123,6 +135,7 @@ export default function UpcomingDeadlines() {
       </div>
 
       {/* Loading */}
+
       {loading ? (
 
         <div className="space-y-3 p-5 sm:p-6">
@@ -139,6 +152,7 @@ export default function UpcomingDeadlines() {
       ) : upcomingDeadlines.length === 0 ? (
 
         /* Empty State */
+
         <div className="px-6 py-14 text-center sm:py-16">
 
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-green-50">
@@ -162,6 +176,7 @@ export default function UpcomingDeadlines() {
       ) : (
 
         /* Deadline List */
+
         <div className="divide-y divide-gray-100">
 
           {upcomingDeadlines.map((order) => {
@@ -180,11 +195,13 @@ export default function UpcomingDeadlines() {
                 <div className="flex items-start gap-4">
 
                   {/* Assignment Icon */}
+
                   <div className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gray-50 text-gray-500 sm:flex">
                     <FileText size={20} />
                   </div>
 
                   {/* Main Content */}
+
                   <div className="min-w-0 flex-1">
 
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
@@ -204,6 +221,7 @@ export default function UpcomingDeadlines() {
                       </div>
 
                       {/* Deadline Badge */}
+
                       <span
                         className={`w-fit shrink-0 rounded-full border px-3 py-1 text-xs font-semibold ${deadline.badge}`}
                       >
@@ -213,15 +231,21 @@ export default function UpcomingDeadlines() {
                     </div>
 
                     {/* Deadline Date */}
+
                     <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-gray-500 sm:text-sm">
 
                       <span className="flex items-center gap-1.5">
+
                         <Clock
                           size={14}
                           className={deadline.icon}
                         />
 
-                        {formatDeadline(order.deadline)}
+                        {formatDeadline(
+                          order.deadline,
+                          order.client_timezone
+                        )}
+
                       </span>
 
                       <span className="hidden text-gray-300 sm:inline">
@@ -237,6 +261,7 @@ export default function UpcomingDeadlines() {
                   </div>
 
                   {/* Arrow */}
+
                   <ArrowRight
                     size={18}
                     className="mt-1 hidden shrink-0 text-gray-300 transition-all group-hover:translate-x-1 group-hover:text-blue-600 sm:block"
@@ -253,6 +278,7 @@ export default function UpcomingDeadlines() {
       )}
 
       {/* Mobile View Orders */}
+
       {!loading && upcomingDeadlines.length > 0 && (
         <div className="border-t border-gray-100 p-4 sm:hidden">
 

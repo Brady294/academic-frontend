@@ -3,6 +3,7 @@
 import {
   ChangeEvent,
   FormEvent,
+  useEffect,
   useState,
 } from "react";
 
@@ -39,6 +40,109 @@ interface UploadedFile {
   id: string;
   file: File;
 }
+
+/* =========================================================
+   TIME ZONES
+========================================================= */
+
+const TIME_ZONES = [
+  {
+    value: "Africa/Nairobi",
+    label: "Nairobi (EAT, UTC+3)",
+  },
+  {
+    value: "Africa/Lagos",
+    label: "Lagos (WAT, UTC+1)",
+  },
+  {
+    value: "Africa/Johannesburg",
+    label: "Johannesburg (SAST, UTC+2)",
+  },
+  {
+    value: "Africa/Cairo",
+    label: "Cairo (EET)",
+  },
+  {
+    value: "Africa/Casablanca",
+    label: "Casablanca (Morocco)",
+  },
+  {
+    value: "Africa/Accra",
+    label: "Accra (GMT, UTC+0)",
+  },
+  {
+    value: "Europe/London",
+    label: "London (UK)",
+  },
+  {
+    value: "Europe/Paris",
+    label: "Paris (Central Europe)",
+  },
+  {
+    value: "Europe/Berlin",
+    label: "Berlin (Central Europe)",
+  },
+  {
+    value: "Europe/Moscow",
+    label: "Moscow (MSK, UTC+3)",
+  },
+  {
+    value: "Asia/Dubai",
+    label: "Dubai (GST, UTC+4)",
+  },
+  {
+    value: "Asia/Kolkata",
+    label: "India (IST, UTC+5:30)",
+  },
+  {
+    value: "Asia/Singapore",
+    label: "Singapore (SGT, UTC+8)",
+  },
+  {
+    value: "Asia/Shanghai",
+    label: "China (CST, UTC+8)",
+  },
+  {
+    value: "Asia/Tokyo",
+    label: "Tokyo (JST, UTC+9)",
+  },
+  {
+    value: "Australia/Sydney",
+    label: "Sydney (AEST/AEDT)",
+  },
+  {
+    value: "Pacific/Auckland",
+    label: "Auckland (NZST/NZDT)",
+  },
+  {
+    value: "America/New_York",
+    label: "New York (Eastern Time)",
+  },
+  {
+    value: "America/Chicago",
+    label: "Chicago (Central Time)",
+  },
+  {
+    value: "America/Denver",
+    label: "Denver (Mountain Time)",
+  },
+  {
+    value: "America/Los_Angeles",
+    label: "Los Angeles (Pacific Time)",
+  },
+  {
+    value: "America/Toronto",
+    label: "Toronto (Eastern Time)",
+  },
+  {
+    value: "America/Vancouver",
+    label: "Vancouver (Pacific Time)",
+  },
+  {
+    value: "America/Sao_Paulo",
+    label: "São Paulo (BRT)",
+  },
+];
 
 /* =========================================================
    SUBJECTS
@@ -319,8 +423,72 @@ function isTechnicalOrder(
 
   return TECHNICAL_KEYWORDS.some(
     (keyword) =>
-      combined.includes(keyword.toLowerCase())
+      combined.includes(
+        keyword.toLowerCase()
+      )
   );
+}
+
+/* =========================================================
+   TIMEZONE HELPERS
+========================================================= */
+
+/**
+ * Gets the timezone configured on the user's
+ * phone/computer/browser.
+ *
+ * Example:
+ * Africa/Nairobi
+ * America/New_York
+ * Europe/London
+ */
+function getBrowserTimezone(): string {
+  try {
+    return (
+      Intl.DateTimeFormat().resolvedOptions()
+        .timeZone || "Africa/Nairobi"
+    );
+  } catch {
+    return "Africa/Nairobi";
+  }
+}
+
+/**
+ * Converts the selected deadline into a readable
+ * date/time using the selected timezone.
+ */
+function formatDeadline(
+  value: string,
+  timezone: string
+): string {
+  if (!value) {
+    return "-";
+  }
+
+  try {
+    /*
+     * datetime-local has no timezone information.
+     *
+     * We intentionally interpret the selected
+     * deadline as belonging to the selected timezone.
+     */
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      return value;
+    }
+
+    return new Intl.DateTimeFormat(
+      undefined,
+      {
+        timeZone: timezone,
+        dateStyle: "medium",
+        timeStyle: "short",
+      }
+    ).format(date);
+  } catch {
+    return value;
+  }
 }
 
 /* =========================================================
@@ -358,6 +526,24 @@ export default function CreateOrderForm() {
     useState("Double");
 
   /* -------------------------------------------------------
+     TIMEZONE
+  ------------------------------------------------------- */
+
+  /*
+   * Start empty so the browser can determine the
+   * timezone on the client.
+   */
+  const [timezone, setTimezone] =
+    useState("Africa/Nairobi");
+
+  /*
+   * Indicates whether the timezone was automatically
+   * detected.
+   */
+  const [timezoneDetected, setTimezoneDetected] =
+    useState(false);
+
+  /* -------------------------------------------------------
      REQUIREMENTS
   ------------------------------------------------------- */
 
@@ -386,6 +572,44 @@ export default function CreateOrderForm() {
 
   const [successMessage, setSuccessMessage] =
     useState("");
+
+  /* =======================================================
+     AUTOMATIC TIMEZONE DETECTION
+  ======================================================= */
+
+  useEffect(() => {
+    /*
+     * This runs only in the browser.
+     *
+     * The browser gets the timezone from the user's
+     * operating system / device settings.
+     */
+    const detectedTimezone =
+      getBrowserTimezone();
+
+    /*
+     * Check whether the detected timezone exists
+     * in our selectable timezone list.
+     */
+    const supportedTimezone =
+      TIME_ZONES.some(
+        (item) =>
+          item.value === detectedTimezone
+      );
+
+    if (supportedTimezone) {
+      setTimezone(detectedTimezone);
+    } else {
+      /*
+       * If the browser reports a timezone that is not
+       * included in our list, keep the detected IANA
+       * timezone so it can still be sent to the backend.
+       */
+      setTimezone(detectedTimezone);
+    }
+
+    setTimezoneDetected(true);
+  }, []);
 
   /* -------------------------------------------------------
      TECHNICAL ORDER
@@ -476,6 +700,13 @@ export default function CreateOrderForm() {
     ) {
       setSubmitError(
         "Please enter the number of pages."
+      );
+      return false;
+    }
+
+    if (!timezone) {
+      setSubmitError(
+        "Please select your timezone."
       );
       return false;
     }
@@ -616,6 +847,9 @@ export default function CreateOrderForm() {
        *
        * The backend receives the order details and
        * calculates the price.
+       *
+       * TIMEZONE has now been added so the backend
+       * knows which timezone the client selected.
        */
       const response =
         await orderService.createOrder({
@@ -638,6 +872,11 @@ export default function CreateOrderForm() {
             "Not Required",
 
           deadline,
+
+          /*
+           * NEW
+           */
+          timezone,
 
           instructions:
             instructions.trim(),
@@ -1028,6 +1267,81 @@ export default function CreateOrderForm() {
                     placeholder="e.g. 10"
                     className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   />
+                </div>
+              </div>
+
+              {/* =================================================
+                  TIMEZONE
+              ================================================= */}
+
+              <div>
+                <label className="mb-1.5 flex items-center gap-2 text-sm font-semibold text-gray-700">
+                  <Clock3
+                    size={16}
+                    className="text-blue-600"
+                  />
+
+                  Your timezone
+                </label>
+
+                <div className="relative">
+                  <select
+                    value={timezone}
+                    onChange={(event) =>
+                      setTimezone(
+                        event.target.value
+                      )
+                    }
+                    className="w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 py-3 pr-10 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  >
+                    {/*
+                     * If the browser detects a timezone that
+                     * isn't in our predefined list, add it
+                     * dynamically so the selected value is
+                     * still visible.
+                     */}
+                    {!TIME_ZONES.some(
+                      (item) =>
+                        item.value ===
+                        timezone
+                    ) &&
+                      timezone && (
+                        <option
+                          value={timezone}
+                        >
+                          {timezone}
+                        </option>
+                      )}
+
+                    {TIME_ZONES.map(
+                      (item) => (
+                        <option
+                          key={item.value}
+                          value={item.value}
+                        >
+                          {item.label}
+                        </option>
+                      )
+                    )}
+                  </select>
+
+                  <ChevronDown
+                    size={17}
+                    className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
+                  />
+                </div>
+
+                <div className="mt-2 flex items-start gap-2">
+                  <Info
+                    size={15}
+                    className="mt-0.5 shrink-0 text-gray-400"
+                  />
+
+                  <p className="text-xs leading-5 text-gray-500">
+                    {timezoneDetected
+                      ? `Your device timezone was detected as ${timezone}. You can change it if needed.`
+                      : "Detecting your device timezone..."}
+                  </p>
                 </div>
               </div>
 
@@ -1424,11 +1738,19 @@ export default function CreateOrderForm() {
                     label="Deadline"
                     value={
                       deadline
-                        ? new Date(
-                            deadline
-                          ).toLocaleString()
+                        ? formatDeadline(
+                            deadline,
+                            timezone
+                          )
                         : "-"
                     }
+                  />
+
+                  {/* NEW TIMEZONE REVIEW */}
+
+                  <SummaryItem
+                    label="Timezone"
+                    value={timezone}
                   />
 
                   <SummaryItem
