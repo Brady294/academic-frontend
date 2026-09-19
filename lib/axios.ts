@@ -14,9 +14,8 @@ const api = axios.create({
 |--------------------------------------------------------------------------
 | REQUEST INTERCEPTOR
 |--------------------------------------------------------------------------
-|
-| Attach the stored access token to every API request.
-|
+| Attach the access token to EVERY API request.
+|--------------------------------------------------------------------------
 */
 
 api.interceptors.request.use(
@@ -25,11 +24,21 @@ api.interceptors.request.use(
       const token =
         localStorage.getItem("accessToken");
 
+      console.log(
+        "[API REQUEST]",
+        config.method?.toUpperCase(),
+        config.url,
+        "TOKEN:",
+        token ? "FOUND" : "MISSING"
+      );
+
       if (token) {
         config.headers.set(
           "Authorization",
           `Bearer ${token}`
         );
+      } else {
+        config.headers.delete("Authorization");
       }
     }
 
@@ -66,10 +75,8 @@ const processQueue = (
 |--------------------------------------------------------------------------
 | RESPONSE INTERCEPTOR
 |--------------------------------------------------------------------------
-|
-| If the access token expires, attempt to obtain a new one using
-| the stored refresh token.
-|
+| If access token expires, refresh it and retry the request.
+|--------------------------------------------------------------------------
 */
 
 api.interceptors.response.use(
@@ -91,15 +98,21 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Another request is already refreshing
+    |--------------------------------------------------------------------------
+    */
+
     if (isRefreshing) {
-      return new Promise((resolve, reject) => {
-        failedQueue.push({
-          resolve: (token: string) => {
-            resolve(token);
-          },
-          reject,
-        });
-      }).then((token) => {
+      return new Promise<string>(
+        (resolve, reject) => {
+          failedQueue.push({
+            resolve,
+            reject,
+          });
+        }
+      ).then((token) => {
         originalRequest.headers.set(
           "Authorization",
           `Bearer ${token}`
@@ -114,15 +127,25 @@ api.interceptors.response.use(
 
     try {
       const refreshToken =
-        typeof window !== "undefined"
-          ? localStorage.getItem("refreshToken")
-          : null;
+        localStorage.getItem("refreshToken");
 
       if (!refreshToken) {
         throw new Error(
           "No refresh token found."
         );
       }
+
+      console.log(
+        "[AUTH] Access token expired. Refreshing..."
+      );
+
+      /*
+      |----------------------------------------------------------------------
+      | IMPORTANT:
+      | Use plain axios here, not api, so we don't trigger the interceptor
+      | recursively.
+      |----------------------------------------------------------------------
+      */
 
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_API_URL}/api/auth/refresh`,
@@ -134,6 +157,12 @@ api.interceptors.response.use(
       const accessToken =
         response.data.accessToken;
 
+      if (!accessToken) {
+        throw new Error(
+          "Refresh response did not contain an access token."
+        );
+      }
+
       localStorage.setItem(
         "accessToken",
         accessToken
@@ -143,28 +172,28 @@ api.interceptors.response.use(
         "Authorization"
       ] = `Bearer ${accessToken}`;
 
-      processQueue(
-        null,
-        accessToken
-      );
+      processQueue(null, accessToken);
 
       originalRequest.headers.set(
         "Authorization",
         `Bearer ${accessToken}`
       );
 
+      console.log(
+        "[AUTH] Access token refreshed successfully."
+      );
+
       return api(originalRequest);
-    } catch (err) {
-      processQueue(err);
+    } catch (refreshError) {
+      processQueue(refreshError);
 
-      localStorage.removeItem(
-        "accessToken"
+      console.error(
+        "[AUTH] Token refresh failed:",
+        refreshError
       );
 
-      localStorage.removeItem(
-        "refreshToken"
-      );
-
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
       localStorage.removeItem("user");
 
       delete api.defaults.headers.common[
@@ -177,7 +206,9 @@ api.interceptors.response.use(
         window.location.href = "/login";
       }
 
-      return Promise.reject(err);
+      return Promise.reject(
+        refreshError
+      );
     } finally {
       isRefreshing = false;
     }
