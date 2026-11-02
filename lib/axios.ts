@@ -1,25 +1,48 @@
+
 import axios, {
   AxiosError,
   InternalAxiosRequestConfig,
 } from "axios";
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL;
+/* ==========================================================================
+   API CONFIGURATION
+============================================================================ */
+
+const API_URL = (
+  process.env.NEXT_PUBLIC_API_URL || ""
+)
+  .trim()
+  .replace(/\/+$/, "")
+  .replace(/\/api$/i, "");
+
+if (!API_URL) {
+  console.error(
+    "NEXT_PUBLIC_API_URL is not configured."
+  );
+}
+
+const API_BASE_URL = `${API_URL}/api`;
 
 const api = axios.create({
-  baseURL: `${API_URL}/api`,
+  baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-/*
-|--------------------------------------------------------------------------
-| REQUEST INTERCEPTOR
-|--------------------------------------------------------------------------
-| Attach the access token to every browser request.
-|--------------------------------------------------------------------------
-*/
+/* ==========================================================================
+   REQUEST CONFIGURATION
+============================================================================ */
+
+interface RetryRequestConfig
+  extends InternalAxiosRequestConfig {
+  _retry?: boolean;
+}
+
+/* ==========================================================================
+   REQUEST INTERCEPTOR
+   Attach access token to every API request.
+============================================================================ */
 
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
@@ -28,9 +51,7 @@ api.interceptors.request.use(
     }
 
     const token =
-      window.localStorage.getItem(
-        "accessToken"
-      );
+      window.localStorage.getItem("accessToken");
 
     if (token) {
       config.headers.set(
@@ -38,23 +59,18 @@ api.interceptors.request.use(
         `Bearer ${token}`
       );
     } else {
-      config.headers.delete(
-        "Authorization"
-      );
+      config.headers.delete("Authorization");
     }
 
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+
+  (error) => Promise.reject(error)
 );
 
-/*
-|--------------------------------------------------------------------------
-| REFRESH QUEUE
-|--------------------------------------------------------------------------
-*/
+/* ==========================================================================
+   TOKEN REFRESH QUEUE
+============================================================================ */
 
 let isRefreshing = false;
 
@@ -80,11 +96,9 @@ function processQueue(
   failedQueue = [];
 }
 
-/*
-|--------------------------------------------------------------------------
-| RESPONSE INTERCEPTOR
-|--------------------------------------------------------------------------
-*/
+/* ==========================================================================
+   RESPONSE INTERCEPTOR
+============================================================================ */
 
 api.interceptors.response.use(
   (response) => response,
@@ -92,16 +106,10 @@ api.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest =
       error.config as
-        | (InternalAxiosRequestConfig & {
-            _retry?: boolean;
-          })
+        | RetryRequestConfig
         | undefined;
 
-    /*
-    |--------------------------------------------------------------------------
-    | Only handle 401 responses
-    |--------------------------------------------------------------------------
-    */
+    /* Only process authentication failures */
 
     if (
       error.response?.status !== 401 ||
@@ -111,11 +119,11 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Wait if another request is refreshing
-    |--------------------------------------------------------------------------
-    */
+    if (typeof window === "undefined") {
+      return Promise.reject(error);
+    }
+
+    /* Wait for an ongoing token refresh */
 
     if (isRefreshing) {
       return new Promise<string>(
@@ -126,6 +134,8 @@ api.interceptors.response.use(
           });
         }
       ).then((token) => {
+        originalRequest._retry = true;
+
         originalRequest.headers.set(
           "Authorization",
           `Bearer ${token}`
@@ -136,6 +146,7 @@ api.interceptors.response.use(
     }
 
     originalRequest._retry = true;
+
     isRefreshing = true;
 
     try {
@@ -151,27 +162,26 @@ api.interceptors.response.use(
       }
 
       /*
-      |--------------------------------------------------------------------------
-      | IMPORTANT
-      |--------------------------------------------------------------------------
-      | Use plain axios here.
-      | Do NOT use `api`, otherwise the refresh request itself can enter
-      | the interceptor again.
-      |--------------------------------------------------------------------------
-      */
+       * Use plain axios to prevent the refresh request
+       * from triggering this interceptor recursively.
+       */
 
-      const response =
-        await axios.post<{
-          accessToken: string;
-        }>(
-          `${API_URL}/api/auth/refresh`,
-          {
-            refreshToken,
-          }
-        );
+      const response = await axios.post<{
+        accessToken: string;
+      }>(
+        `${API_BASE_URL}/auth/refresh`,
+        {
+          refreshToken,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       const newAccessToken =
-        response.data.accessToken;
+        response.data?.accessToken;
 
       if (!newAccessToken) {
         throw new Error(
@@ -179,19 +189,27 @@ api.interceptors.response.use(
         );
       }
 
+      /* Save new token */
+
       window.localStorage.setItem(
         "accessToken",
         newAccessToken
       );
 
+      /* Update Axios defaults */
+
       api.defaults.headers.common[
         "Authorization"
       ] = `Bearer ${newAccessToken}`;
+
+      /* Release waiting requests */
 
       processQueue(
         null,
         newAccessToken
       );
+
+      /* Retry original request */
 
       originalRequest.headers.set(
         "Authorization",
@@ -199,8 +217,13 @@ api.interceptors.response.use(
       );
 
       return api(originalRequest);
+
     } catch (refreshError) {
+      /* Reject all waiting requests */
+
       processQueue(refreshError);
+
+      /* Clear invalid authentication session */
 
       window.localStorage.removeItem(
         "accessToken"
@@ -218,15 +241,20 @@ api.interceptors.response.use(
         "Authorization"
       ];
 
+      /* Return to login */
+
       window.location.href = "/login";
 
-      return Promise.reject(
-        refreshError
-      );
+      return Promise.reject(refreshError);
+
     } finally {
       isRefreshing = false;
     }
   }
 );
+
+/* ==========================================================================
+   EXPORT
+============================================================================ */
 
 export default api;

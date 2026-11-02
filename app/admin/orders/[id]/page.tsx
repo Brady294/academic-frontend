@@ -19,11 +19,10 @@ import {
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import api from "@/lib/axios";
-import type { AxiosError } from "axios";
 
-/* ============================================================
+/* ==========================================================================
    TYPES
-============================================================ */
+============================================================================ */
 
 type Order = {
   id: number;
@@ -32,18 +31,23 @@ type Order = {
   subject: string;
   service_type: string;
   academic_level: string;
-  pages: number | null;
-  spacing: string | null;
+  pages: number;
+  spacing: string;
   citation_style: string | null;
-  deadline: string | null;
+  deadline: string;
   instructions: string | null;
-  budget: number | string | null;
+  budget: number | string;
   status: string;
   pricing_status: string;
   assigned_admin_id: number | null;
   client_timezone: string | null;
   created_at: string;
   updated_at: string;
+};
+
+type OrderResponse = {
+  success: boolean;
+  order: Order;
 };
 
 type AdminUser = {
@@ -53,15 +57,14 @@ type AdminUser = {
   email: string;
 };
 
-type OrderResponse = {
-  success: boolean;
-  order: Order;
-};
-
 type ApiErrorResponse = {
   error?: string;
   message?: string;
 };
+
+/* ==========================================================================
+   CONSTANTS
+============================================================================ */
 
 const ORDER_STATUSES = [
   "Pending",
@@ -70,15 +73,20 @@ const ORDER_STATUSES = [
   "Cancelled",
 ];
 
-/* ============================================================
+/* ==========================================================================
    ERROR HANDLER
-============================================================ */
+============================================================================ */
 
-function getApiError(
+function getApiErrorMessage(
   error: unknown,
   fallback: string
 ): string {
-  const axiosError = error as AxiosError<ApiErrorResponse>;
+  const axiosError = error as {
+    response?: {
+      data?: ApiErrorResponse;
+    };
+    message?: string;
+  };
 
   return (
     axiosError.response?.data?.error ||
@@ -88,50 +96,67 @@ function getApiError(
   );
 }
 
-/* ============================================================
+/* ==========================================================================
    MAIN PAGE
-============================================================ */
+============================================================================ */
 
 export default function AdminOrderDetailsPage() {
   const params = useParams();
 
-  const rawId = params?.id;
+  const orderId = params?.id;
 
-  const orderId = Array.isArray(rawId)
-    ? rawId[0]
-    : rawId;
+  const [order, setOrder] =
+    useState<Order | null>(null);
 
-  const [order, setOrder] = useState<Order | null>(null);
+  const [loading, setLoading] =
+    useState(true);
 
-  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] =
+    useState(false);
 
-  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] =
+    useState<string | null>(null);
 
-  const [error, setError] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] =
+    useState(false);
 
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [updatingStatus, setUpdatingStatus] =
+    useState(false);
 
-  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [assigningAdmin, setAssigningAdmin] =
+    useState(false);
 
-  const [assigningAdmin, setAssigningAdmin] = useState(false);
+  const [admins, setAdmins] =
+    useState<AdminUser[]>([]);
 
-  const [admins, setAdmins] = useState<AdminUser[]>([]);
+  const [actionMessage, setActionMessage] =
+    useState<string | null>(null);
 
-  const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [actionError, setActionError] =
+    useState<string | null>(null);
 
-  const [actionError, setActionError] = useState<string | null>(null);
+  /* ==========================================================================
+     LOAD ORDER AND ADMINISTRATORS
+  ============================================================================ */
 
-  /* ============================================================
+  useEffect(() => {
+    if (!orderId) return;
+
+    loadOrder();
+    loadAdmins();
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderId]);
+
+  /* ==========================================================================
      LOAD ORDER
-  ============================================================ */
+
+     IMPORTANT:
+     Uses the shared Axios instance.
+     The Axios interceptor attaches the Bearer access token.
+  ============================================================================ */
 
   async function loadOrder(showRefresh = false) {
-    if (!orderId) {
-      setError("Order ID is missing.");
-      setLoading(false);
-      return;
-    }
-
     try {
       if (showRefresh) {
         setRefreshing(true);
@@ -141,12 +166,8 @@ export default function AdminOrderDetailsPage() {
 
       setError(null);
 
-      // IMPORTANT:
-      // Use the shared Axios instance.
-      // It automatically attaches the Bearer access token.
-
       const response = await api.get<OrderResponse>(
-        `/admin/orders/${encodeURIComponent(orderId)}`,
+        `/admin/orders/${orderId}`,
         {
           headers: {
             "Cache-Control": "no-cache",
@@ -155,15 +176,23 @@ export default function AdminOrderDetailsPage() {
       );
 
       if (!response.data?.order) {
-        throw new Error("The server did not return order details.");
+        throw new Error(
+          "The server returned an invalid order response."
+        );
       }
 
       setOrder(response.data.order);
     } catch (err) {
-      console.error("ADMIN ORDER DETAILS ERROR:", err);
+      console.error(
+        "ADMIN ORDER DETAILS ERROR:",
+        err
+      );
 
       setError(
-        getApiError(err, "Failed to load order details.")
+        getApiErrorMessage(
+          err,
+          "Failed to load order."
+        )
       );
     } finally {
       setLoading(false);
@@ -171,9 +200,9 @@ export default function AdminOrderDetailsPage() {
     }
   }
 
-  /* ============================================================
+  /* ==========================================================================
      LOAD ADMINISTRATORS
-  ============================================================ */
+  ============================================================================ */
 
   async function loadAdmins() {
     try {
@@ -181,31 +210,26 @@ export default function AdminOrderDetailsPage() {
         "/admin/order-actions/admins"
       );
 
-      setAdmins(response.data?.admins || []);
+      setAdmins(
+        Array.isArray(response.data?.admins)
+          ? response.data.admins
+          : []
+      );
     } catch (err) {
-      console.error("LOAD ADMINS ERROR:", err);
+      console.error(
+        "LOAD ADMINS ERROR:",
+        err
+      );
     }
   }
 
-  /* ============================================================
-     INITIAL LOAD
-  ============================================================ */
-
-  useEffect(() => {
-    if (!orderId) return;
-
-    loadOrder();
-    loadAdmins();
-
-    // orderId identifies the order being displayed.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orderId]);
-
-  /* ============================================================
+  /* ==========================================================================
      UPDATE ORDER STATUS
-  ============================================================ */
+  ============================================================================ */
 
-  async function updateStatus(newStatus: string) {
+  async function updateStatus(
+    newStatus: string
+  ) {
     if (!order) return;
 
     if (!ORDER_STATUSES.includes(newStatus)) {
@@ -213,7 +237,9 @@ export default function AdminOrderDetailsPage() {
       return;
     }
 
-    if (newStatus === order.status) return;
+    if (newStatus === order.status) {
+      return;
+    }
 
     try {
       setUpdatingStatus(true);
@@ -232,7 +258,9 @@ export default function AdminOrderDetailsPage() {
 
         return {
           ...current,
-          status: response.data?.order?.status || newStatus,
+          status:
+            response.data?.order?.status ||
+            newStatus,
           updated_at:
             response.data?.order?.updated_at ||
             current.updated_at,
@@ -243,19 +271,25 @@ export default function AdminOrderDetailsPage() {
         "Order status updated successfully."
       );
     } catch (err) {
-      console.error("UPDATE STATUS ERROR:", err);
+      console.error(
+        "UPDATE STATUS ERROR:",
+        err
+      );
 
       setActionError(
-        getApiError(err, "Failed to update order status.")
+        getApiErrorMessage(
+          err,
+          "Failed to update order status."
+        )
       );
     } finally {
       setUpdatingStatus(false);
     }
   }
 
-  /* ============================================================
+  /* ==========================================================================
      ASSIGN ADMINISTRATOR
-  ============================================================ */
+  ============================================================================ */
 
   async function assignAdmin(adminId: string) {
     if (!order) return;
@@ -270,9 +304,12 @@ export default function AdminOrderDetailsPage() {
 
       if (
         parsedAdminId !== null &&
-        !Number.isInteger(parsedAdminId)
+        (!Number.isInteger(parsedAdminId) ||
+          parsedAdminId <= 0)
       ) {
-        throw new Error("Invalid administrator ID.");
+        throw new Error(
+          "Invalid administrator ID."
+        );
       }
 
       const response = await api.patch(
@@ -302,64 +339,106 @@ export default function AdminOrderDetailsPage() {
           : "Order assigned successfully."
       );
     } catch (err) {
-      console.error("ASSIGN ADMIN ERROR:", err);
+      console.error(
+        "ASSIGN ADMIN ERROR:",
+        err
+      );
 
       setActionError(
-        getApiError(err, "Failed to assign administrator.")
+        getApiErrorMessage(
+          err,
+          "Failed to assign administrator."
+        )
       );
     } finally {
       setAssigningAdmin(false);
     }
   }
 
-  /* ============================================================
-     FORMAT HELPERS
-  ============================================================ */
+  /* ==========================================================================
+     FORMAT DATE
+  ============================================================================ */
 
   function formatDate(value: string | null) {
     if (!value) return "—";
 
     const date = new Date(value);
 
-    if (Number.isNaN(date.getTime())) return "—";
+    if (Number.isNaN(date.getTime())) {
+      return "—";
+    }
 
-    return date.toLocaleDateString(undefined, {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
+    return date.toLocaleDateString(
+      undefined,
+      {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      }
+    );
   }
+
+  /* ==========================================================================
+     FORMAT DATE AND TIME
+  ============================================================================ */
 
   function formatDateTime(value: string | null) {
     if (!value) return "—";
 
     const date = new Date(value);
 
-    if (Number.isNaN(date.getTime())) return "—";
+    if (Number.isNaN(date.getTime())) {
+      return "—";
+    }
 
-    return date.toLocaleString(undefined, {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    });
+    return date.toLocaleString(
+      undefined,
+      {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      }
+    );
   }
 
+  /* ==========================================================================
+     FORMAT CURRENCY
+  ============================================================================ */
+
   function formatCurrency(
-    value: number | string | null | undefined
+    value:
+      | number
+      | string
+      | null
+      | undefined
   ) {
-    if (value === null || value === undefined) return "—";
+    if (
+      value === null ||
+      value === undefined
+    ) {
+      return "—";
+    }
 
     const amount = Number(value);
 
-    if (!Number.isFinite(amount)) return "—";
+    if (!Number.isFinite(amount)) {
+      return "—";
+    }
 
-    return `$${amount.toLocaleString(undefined, {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })}`;
+    return `$${amount.toLocaleString(
+      undefined,
+      {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }
+    )}`;
   }
+
+  /* ==========================================================================
+     FORMAT LABEL
+  ============================================================================ */
 
   function formatLabel(
     value: string | null | undefined
@@ -368,8 +447,15 @@ export default function AdminOrderDetailsPage() {
 
     return value
       .replace(/_/g, " ")
-      .replace(/\b\w/g, (char) => char.toUpperCase());
+      .replace(
+        /\b\w/g,
+        (char) => char.toUpperCase()
+      );
   }
+
+  /* ==========================================================================
+     STATUS CLASS
+  ============================================================================ */
 
   function getStatusClass(status: string) {
     const normalized = status.toLowerCase();
@@ -399,6 +485,10 @@ export default function AdminOrderDetailsPage() {
     return "bg-slate-100 text-slate-600";
   }
 
+  /* ==========================================================================
+     PRICING CLASS
+  ============================================================================ */
+
   function getPricingClass(status: string) {
     if (status === "pending_review") {
       return "bg-orange-50 text-orange-700";
@@ -414,14 +504,24 @@ export default function AdminOrderDetailsPage() {
     return "bg-slate-100 text-slate-600";
   }
 
-  function getAdminName(adminId: number | null) {
-    if (!adminId) return "Unassigned";
+  /* ==========================================================================
+     ADMIN NAME
+  ============================================================================ */
+
+  function getAdminName(
+    adminId: number | null
+  ) {
+    if (!adminId) {
+      return "Unassigned";
+    }
 
     const adminUser = admins.find(
       (item) => item.id === adminId
     );
 
-    if (!adminUser) return `Admin #${adminId}`;
+    if (!adminUser) {
+      return `Admin #${adminId}`;
+    }
 
     const name = [
       adminUser.first_name,
@@ -433,9 +533,9 @@ export default function AdminOrderDetailsPage() {
     return name || adminUser.email;
   }
 
-  /* ============================================================
+  /* ==========================================================================
      LOADING SCREEN
-  ============================================================ */
+  ============================================================================ */
 
   if (loading) {
     return (
@@ -455,9 +555,9 @@ export default function AdminOrderDetailsPage() {
     );
   }
 
-  /* ============================================================
+  /* ==========================================================================
      ERROR SCREEN
-  ============================================================ */
+  ============================================================================ */
 
   if (error || !order) {
     return (
@@ -499,9 +599,9 @@ export default function AdminOrderDetailsPage() {
     );
   }
 
-  /* ============================================================
-     MAIN ADMIN ORDER INTERFACE
-  ============================================================ */
+  /* ==========================================================================
+     MAIN PAGE UI
+  ============================================================================ */
 
   return (
     <div className="min-h-screen bg-[#f6f9fd] text-slate-900">
@@ -527,7 +627,10 @@ export default function AdminOrderDetailsPage() {
         }`}
       >
         <div className="flex h-[86px] items-center justify-between border-b border-slate-100 px-6">
-          <a href="/admin" className="flex items-center gap-3">
+          <a
+            href="/admin"
+            className="flex items-center gap-3"
+          >
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600">
               <Package className="h-5 w-5 text-white" />
             </div>
@@ -535,7 +638,9 @@ export default function AdminOrderDetailsPage() {
             <div>
               <div className="text-[19px] font-extrabold tracking-tight">
                 TopStudy
-                <span className="text-blue-600">Tutor</span>
+                <span className="text-blue-600">
+                  Tutor
+                </span>
               </div>
 
               <div className="text-[10px] font-medium uppercase tracking-[0.12em] text-slate-400">
@@ -559,7 +664,10 @@ export default function AdminOrderDetailsPage() {
           </p>
 
           <nav className="space-y-1">
-            <AdminNavItem href="/admin" label="Dashboard" />
+            <AdminNavItem
+              href="/admin"
+              label="Dashboard"
+            />
 
             <AdminNavItem
               href="/admin/orders"
@@ -567,13 +675,25 @@ export default function AdminOrderDetailsPage() {
               active
             />
 
-            <AdminNavItem href="/admin/users" label="Users" />
+            <AdminNavItem
+              href="/admin/users"
+              label="Users"
+            />
 
-            <AdminNavItem href="/admin/messages" label="Messages" />
+            <AdminNavItem
+              href="/admin/messages"
+              label="Messages"
+            />
 
-            <AdminNavItem href="/admin/revisions" label="Revisions" />
+            <AdminNavItem
+              href="/admin/revisions"
+              label="Revisions"
+            />
 
-            <AdminNavItem href="/admin/analytics" label="Analytics" />
+            <AdminNavItem
+              href="/admin/analytics"
+              label="Analytics"
+            />
           </nav>
 
           <p className="mb-3 mt-8 px-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
@@ -610,19 +730,23 @@ export default function AdminOrderDetailsPage() {
               <Menu className="h-5 w-5" />
             </button>
 
-            <div className="flex items-center gap-2">
-              <a
-                href="/admin/orders"
-                className="text-sm font-medium text-slate-400 hover:text-blue-600"
-              >
-                Orders
-              </a>
+            <div>
+              <div className="flex items-center gap-2">
+                <a
+                  href="/admin/orders"
+                  className="text-sm font-medium text-slate-400 hover:text-blue-600"
+                >
+                  Orders
+                </a>
 
-              <span className="text-slate-300">/</span>
+                <span className="text-slate-300">
+                  /
+                </span>
 
-              <span className="text-sm font-semibold text-slate-700">
-                #{order.id}
-              </span>
+                <span className="text-sm font-semibold text-slate-700">
+                  #{order.id}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -638,7 +762,9 @@ export default function AdminOrderDetailsPage() {
               <RefreshCw className="h-4 w-4" />
             )}
 
-            <span className="hidden sm:inline">Refresh</span>
+            <span className="hidden sm:inline">
+              Refresh
+            </span>
           </button>
         </header>
 
@@ -677,7 +803,8 @@ export default function AdminOrderDetailsPage() {
                       order.pricing_status
                     )}`}
                   >
-                    Pricing: {formatLabel(order.pricing_status)}
+                    Pricing:{" "}
+                    {formatLabel(order.pricing_status)}
                   </span>
                 </div>
 
@@ -739,32 +866,28 @@ export default function AdminOrderDetailsPage() {
                 <div className="grid gap-px bg-slate-100 sm:grid-cols-2 lg:grid-cols-3">
                   <InfoItem
                     label="Service"
-                    value={formatLabel(order.service_type)}
+                    value={order.service_type}
                   />
 
                   <InfoItem
                     label="Academic Level"
-                    value={formatLabel(order.academic_level)}
+                    value={order.academic_level}
                   />
 
                   <InfoItem
                     label="Pages"
-                    value={
-                      order.pages !== null
-                        ? `${order.pages} pages`
-                        : "—"
-                    }
+                    value={`${order.pages} pages`}
                   />
 
                   <InfoItem
                     label="Spacing"
-                    value={formatLabel(order.spacing)}
+                    value={order.spacing}
                   />
 
                   <InfoItem
                     label="Citation Style"
                     value={
-                      formatLabel(order.citation_style) ||
+                      order.citation_style ||
                       "Not specified"
                     }
                   />
@@ -795,14 +918,15 @@ export default function AdminOrderDetailsPage() {
 
                     {order.client_timezone && (
                       <p className="mt-1 text-xs text-slate-400">
-                        Client timezone: {order.client_timezone}
+                        Client timezone:{" "}
+                        {order.client_timezone}
                       </p>
                     )}
                   </div>
                 </div>
               </section>
 
-              {/* INSTRUCTIONS */}
+              {/* STUDENT INSTRUCTIONS */}
 
               <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <SectionHeader
@@ -823,7 +947,7 @@ export default function AdminOrderDetailsPage() {
                 </div>
               </section>
 
-              {/* FILES */}
+              {/* ORDER FILES */}
 
               <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <SectionHeader
@@ -883,7 +1007,8 @@ export default function AdminOrderDetailsPage() {
                   <InfoRow
                     label="Timezone"
                     value={
-                      order.client_timezone || "Not provided"
+                      order.client_timezone ||
+                      "Not provided"
                     }
                   />
                 </div>
@@ -926,7 +1051,9 @@ export default function AdminOrderDetailsPage() {
 
                   <InfoRow
                     label="Assigned Admin"
-                    value={getAdminName(order.assigned_admin_id)}
+                    value={getAdminName(
+                      order.assigned_admin_id
+                    )}
                   />
                 </div>
               </section>
@@ -985,7 +1112,10 @@ export default function AdminOrderDetailsPage() {
                       className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-semibold text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-50"
                     >
                       {ORDER_STATUSES.map((status) => (
-                        <option key={status} value={status}>
+                        <option
+                          key={status}
+                          value={status}
+                        >
                           {status}
                         </option>
                       ))}
@@ -1010,14 +1140,18 @@ export default function AdminOrderDetailsPage() {
                   <div className="relative">
                     <select
                       id="assigned-admin"
-                      value={order.assigned_admin_id ?? ""}
+                      value={
+                        order.assigned_admin_id ?? ""
+                      }
                       disabled={assigningAdmin}
                       onChange={(event) =>
                         assignAdmin(event.target.value)
                       }
                       className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-semibold text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-50"
                     >
-                      <option value="">Unassigned</option>
+                      <option value="">
+                        Unassigned
+                      </option>
 
                       {admins.map((adminUser) => {
                         const name = [
@@ -1073,9 +1207,9 @@ export default function AdminOrderDetailsPage() {
   );
 }
 
-/* ============================================================
+/* ==========================================================================
    NAVIGATION
-============================================================ */
+============================================================================ */
 
 function AdminNavItem({
   href,
@@ -1112,9 +1246,9 @@ function AdminNavItem({
   );
 }
 
-/* ============================================================
+/* ==========================================================================
    SECTION HEADER
-============================================================ */
+============================================================================ */
 
 function SectionHeader({
   icon: Icon,
@@ -1136,9 +1270,9 @@ function SectionHeader({
   );
 }
 
-/* ============================================================
+/* ==========================================================================
    INFO ITEM
-============================================================ */
+============================================================================ */
 
 function InfoItem({
   label,
@@ -1160,9 +1294,9 @@ function InfoItem({
   );
 }
 
-/* ============================================================
+/* ==========================================================================
    INFO ROW
-============================================================ */
+============================================================================ */
 
 function InfoRow({
   label,
