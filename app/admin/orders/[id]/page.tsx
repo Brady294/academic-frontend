@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -17,39 +18,32 @@ import {
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import api from "@/lib/axios";
+import type { AxiosError } from "axios";
+
+/* ============================================================
+   TYPES
+============================================================ */
 
 type Order = {
   id: number;
   user_id: number;
-
   title: string;
   subject: string;
   service_type: string;
   academic_level: string;
-
-  pages: number;
-  spacing: string;
+  pages: number | null;
+  spacing: string | null;
   citation_style: string | null;
-
-  deadline: string;
+  deadline: string | null;
   instructions: string | null;
-
-  budget: number | string;
-
+  budget: number | string | null;
   status: string;
   pricing_status: string;
-
   assigned_admin_id: number | null;
-
   client_timezone: string | null;
-
   created_at: string;
   updated_at: string;
-};
-
-type OrderResponse = {
-  success: boolean;
-  order: Order;
 };
 
 type AdminUser = {
@@ -59,9 +53,15 @@ type AdminUser = {
   email: string;
 };
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
-  "http://localhost:5000";
+type OrderResponse = {
+  success: boolean;
+  order: Order;
+};
+
+type ApiErrorResponse = {
+  error?: string;
+  message?: string;
+};
 
 const ORDER_STATUSES = [
   "Pending",
@@ -70,57 +70,68 @@ const ORDER_STATUSES = [
   "Cancelled",
 ];
 
+/* ============================================================
+   ERROR HANDLER
+============================================================ */
+
+function getApiError(
+  error: unknown,
+  fallback: string
+): string {
+  const axiosError = error as AxiosError<ApiErrorResponse>;
+
+  return (
+    axiosError.response?.data?.error ||
+    axiosError.response?.data?.message ||
+    axiosError.message ||
+    fallback
+  );
+}
+
+/* ============================================================
+   MAIN PAGE
+============================================================ */
+
 export default function AdminOrderDetailsPage() {
   const params = useParams();
 
-  const orderId = params?.id;
+  const rawId = params?.id;
 
-  const [order, setOrder] =
-    useState<Order | null>(null);
+  const orderId = Array.isArray(rawId)
+    ? rawId[0]
+    : rawId;
 
-  const [loading, setLoading] =
-    useState(true);
+  const [order, setOrder] = useState<Order | null>(null);
 
-  const [refreshing, setRefreshing] =
-    useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const [error, setError] =
-    useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const [sidebarOpen, setSidebarOpen] =
-    useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const [updatingStatus, setUpdatingStatus] =
-    useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const [assigningAdmin, setAssigningAdmin] =
-    useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
 
-  const [admins, setAdmins] =
-    useState<AdminUser[]>([]);
+  const [assigningAdmin, setAssigningAdmin] = useState(false);
 
-  const [actionMessage, setActionMessage] =
-    useState<string | null>(null);
+  const [admins, setAdmins] = useState<AdminUser[]>([]);
 
-  const [actionError, setActionError] =
-    useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!orderId) return;
+  const [actionError, setActionError] = useState<string | null>(null);
 
-    loadOrder();
-    loadAdmins();
-  }, [orderId]);
+  /* ============================================================
+     LOAD ORDER
+  ============================================================ */
 
-  /*
-  |--------------------------------------------------------------------------
-  | LOAD ORDER
-  |--------------------------------------------------------------------------
-  */
+  async function loadOrder(showRefresh = false) {
+    if (!orderId) {
+      setError("Order ID is missing.");
+      setLoading(false);
+      return;
+    }
 
-  async function loadOrder(
-    showRefresh = false
-  ) {
     try {
       if (showRefresh) {
         setRefreshing(true);
@@ -130,42 +141,29 @@ export default function AdminOrderDetailsPage() {
 
       setError(null);
 
-      const response = await fetch(
-        `${API_URL}/api/admin/orders/${orderId}`,
+      // IMPORTANT:
+      // Use the shared Axios instance.
+      // It automatically attaches the Bearer access token.
+
+      const response = await api.get<OrderResponse>(
+        `/admin/orders/${encodeURIComponent(orderId)}`,
         {
-          method: "GET",
-          credentials: "include",
           headers: {
-            "Content-Type": "application/json",
+            "Cache-Control": "no-cache",
           },
-          cache: "no-store",
         }
       );
 
-      const data =
-        await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data?.error ||
-            "Failed to load order."
-        );
+      if (!response.data?.order) {
+        throw new Error("The server did not return order details.");
       }
 
-      const result =
-        data as OrderResponse;
-
-      setOrder(result.order);
+      setOrder(response.data.order);
     } catch (err) {
-      console.error(
-        "ADMIN ORDER DETAILS ERROR:",
-        err
-      );
+      console.error("ADMIN ORDER DETAILS ERROR:", err);
 
       setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to load order."
+        getApiError(err, "Failed to load order details.")
       );
     } finally {
       setLoading(false);
@@ -173,115 +171,70 @@ export default function AdminOrderDetailsPage() {
     }
   }
 
-  /*
-  |--------------------------------------------------------------------------
-  | LOAD ADMINISTRATORS
-  |--------------------------------------------------------------------------
-  */
+  /* ============================================================
+     LOAD ADMINISTRATORS
+  ============================================================ */
 
   async function loadAdmins() {
     try {
-      const response = await fetch(
-        `${API_URL}/api/admin/order-actions/admins`,
-        {
-          method: "GET",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          cache: "no-store",
-        }
+      const response = await api.get(
+        "/admin/order-actions/admins"
       );
 
-      const data =
-        await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data?.error ||
-            "Failed to load administrators."
-        );
-      }
-
-      setAdmins(data.admins || []);
+      setAdmins(response.data?.admins || []);
     } catch (err) {
-      console.error(
-        "LOAD ADMINS ERROR:",
-        err
-      );
+      console.error("LOAD ADMINS ERROR:", err);
     }
   }
 
-  /*
-  |--------------------------------------------------------------------------
-  | UPDATE STATUS
-  |--------------------------------------------------------------------------
-  */
+  /* ============================================================
+     INITIAL LOAD
+  ============================================================ */
 
-  async function updateStatus(
-    newStatus: string
-  ) {
+  useEffect(() => {
+    if (!orderId) return;
+
+    loadOrder();
+    loadAdmins();
+
+    // orderId identifies the order being displayed.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderId]);
+
+  /* ============================================================
+     UPDATE ORDER STATUS
+  ============================================================ */
+
+  async function updateStatus(newStatus: string) {
     if (!order) return;
 
-    if (
-      !ORDER_STATUSES.includes(
-        newStatus
-      )
-    ) {
-      setActionError(
-        "Invalid order status."
-      );
-
+    if (!ORDER_STATUSES.includes(newStatus)) {
+      setActionError("Invalid order status.");
       return;
     }
 
-    if (newStatus === order.status) {
-      return;
-    }
+    if (newStatus === order.status) return;
 
     try {
       setUpdatingStatus(true);
-
       setActionMessage(null);
       setActionError(null);
 
-      const response = await fetch(
-        `${API_URL}/api/admin/order-actions/${order.id}/status`,
+      const response = await api.patch(
+        `/admin/order-actions/${order.id}/status`,
         {
-          method: "PATCH",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            status: newStatus,
-          }),
+          status: newStatus,
         }
       );
 
-      const data =
-        await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data?.error ||
-            "Failed to update order status."
-        );
-      }
-
       setOrder((current) => {
-        if (!current) {
-          return current;
-        }
+        if (!current) return current;
 
         return {
           ...current,
-          status:
-            data.order?.status ||
-            newStatus,
-
+          status: response.data?.order?.status || newStatus,
           updated_at:
-            data.order?.updated_at ||
+            response.data?.order?.updated_at ||
             current.updated_at,
         };
       });
@@ -290,93 +243,55 @@ export default function AdminOrderDetailsPage() {
         "Order status updated successfully."
       );
     } catch (err) {
-      console.error(
-        "UPDATE STATUS ERROR:",
-        err
-      );
+      console.error("UPDATE STATUS ERROR:", err);
 
       setActionError(
-        err instanceof Error
-          ? err.message
-          : "Failed to update order status."
+        getApiError(err, "Failed to update order status.")
       );
     } finally {
       setUpdatingStatus(false);
     }
   }
 
-  /*
-  |--------------------------------------------------------------------------
-  | ASSIGN ADMIN
-  |--------------------------------------------------------------------------
-  */
+  /* ============================================================
+     ASSIGN ADMINISTRATOR
+  ============================================================ */
 
-  async function assignAdmin(
-    adminId: string
-  ) {
+  async function assignAdmin(adminId: string) {
     if (!order) return;
 
     try {
       setAssigningAdmin(true);
-
       setActionMessage(null);
       setActionError(null);
 
       const parsedAdminId =
-        adminId === ""
-          ? null
-          : Number(adminId);
+        adminId === "" ? null : Number(adminId);
 
       if (
         parsedAdminId !== null &&
-        !Number.isInteger(
-          parsedAdminId
-        )
+        !Number.isInteger(parsedAdminId)
       ) {
-        throw new Error(
-          "Invalid administrator ID."
-        );
+        throw new Error("Invalid administrator ID.");
       }
 
-      const response = await fetch(
-        `${API_URL}/api/admin/order-actions/${order.id}/assign`,
+      const response = await api.patch(
+        `/admin/order-actions/${order.id}/assign`,
         {
-          method: "PATCH",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            admin_id: parsedAdminId,
-          }),
+          admin_id: parsedAdminId,
         }
       );
 
-      const data =
-        await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data?.error ||
-            "Failed to assign administrator."
-        );
-      }
-
       setOrder((current) => {
-        if (!current) {
-          return current;
-        }
+        if (!current) return current;
 
         return {
           ...current,
-
           assigned_admin_id:
-            data.order
-              ?.assigned_admin_id ??
+            response.data?.order?.assigned_admin_id ??
             parsedAdminId,
-
           updated_at:
-            data.order?.updated_at ||
+            response.data?.order?.updated_at ||
             current.updated_at,
         };
       });
@@ -387,158 +302,79 @@ export default function AdminOrderDetailsPage() {
           : "Order assigned successfully."
       );
     } catch (err) {
-      console.error(
-        "ASSIGN ADMIN ERROR:",
-        err
-      );
+      console.error("ASSIGN ADMIN ERROR:", err);
 
       setActionError(
-        err instanceof Error
-          ? err.message
-          : "Failed to assign administrator."
+        getApiError(err, "Failed to assign administrator.")
       );
     } finally {
       setAssigningAdmin(false);
     }
   }
 
-  /*
-  |--------------------------------------------------------------------------
-  | FORMAT DATE
-  |--------------------------------------------------------------------------
-  */
+  /* ============================================================
+     FORMAT HELPERS
+  ============================================================ */
 
-  function formatDate(
-    value: string | null
-  ) {
+  function formatDate(value: string | null) {
     if (!value) return "—";
 
     const date = new Date(value);
 
-    if (
-      Number.isNaN(
-        date.getTime()
-      )
-    ) {
-      return "—";
-    }
+    if (Number.isNaN(date.getTime())) return "—";
 
-    return date.toLocaleDateString(
-      undefined,
-      {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      }
-    );
+    return date.toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
   }
 
-  /*
-  |--------------------------------------------------------------------------
-  | FORMAT DATE/TIME
-  |--------------------------------------------------------------------------
-  */
-
-  function formatDateTime(
-    value: string | null
-  ) {
+  function formatDateTime(value: string | null) {
     if (!value) return "—";
 
     const date = new Date(value);
 
-    if (
-      Number.isNaN(
-        date.getTime()
-      )
-    ) {
-      return "—";
-    }
+    if (Number.isNaN(date.getTime())) return "—";
 
-    return date.toLocaleString(
-      undefined,
-      {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-      }
-    );
+    return date.toLocaleString(undefined, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
   }
-
-  /*
-  |--------------------------------------------------------------------------
-  | FORMAT CURRENCY
-  |--------------------------------------------------------------------------
-  */
 
   function formatCurrency(
-    value:
-      | number
-      | string
-      | null
-      | undefined
+    value: number | string | null | undefined
   ) {
-    if (
-      value === null ||
-      value === undefined
-    ) {
-      return "—";
-    }
+    if (value === null || value === undefined) return "—";
 
     const amount = Number(value);
 
-    if (!Number.isFinite(amount)) {
-      return "—";
-    }
+    if (!Number.isFinite(amount)) return "—";
 
-    return `$${amount.toLocaleString(
-      undefined,
-      {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }
-    )}`;
+    return `$${amount.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
   }
 
-  /*
-  |--------------------------------------------------------------------------
-  | FORMAT LABEL
-  |--------------------------------------------------------------------------
-  */
-
   function formatLabel(
-    value:
-      | string
-      | null
-      | undefined
+    value: string | null | undefined
   ) {
     if (!value) return "—";
 
     return value
       .replace(/_/g, " ")
-      .replace(
-        /\b\w/g,
-        (char) =>
-          char.toUpperCase()
-      );
+      .replace(/\b\w/g, (char) => char.toUpperCase());
   }
 
-  /*
-  |--------------------------------------------------------------------------
-  | STATUS CLASS
-  |--------------------------------------------------------------------------
-  */
+  function getStatusClass(status: string) {
+    const normalized = status.toLowerCase();
 
-  function getStatusClass(
-    status: string
-  ) {
-    const normalized =
-      status.toLowerCase();
-
-    if (
-      normalized === "pending"
-    ) {
+    if (normalized === "pending") {
       return "bg-orange-50 text-orange-700";
     }
 
@@ -549,9 +385,7 @@ export default function AdminOrderDetailsPage() {
       return "bg-blue-50 text-blue-700";
     }
 
-    if (
-      normalized === "completed"
-    ) {
+    if (normalized === "completed") {
       return "bg-green-50 text-green-700";
     }
 
@@ -565,19 +399,8 @@ export default function AdminOrderDetailsPage() {
     return "bg-slate-100 text-slate-600";
   }
 
-  /*
-  |--------------------------------------------------------------------------
-  | PRICING CLASS
-  |--------------------------------------------------------------------------
-  */
-
-  function getPricingClass(
-    status: string
-  ) {
-    if (
-      status ===
-      "pending_review"
-    ) {
+  function getPricingClass(status: string) {
+    if (status === "pending_review") {
       return "bg-orange-50 text-orange-700";
     }
 
@@ -591,28 +414,14 @@ export default function AdminOrderDetailsPage() {
     return "bg-slate-100 text-slate-600";
   }
 
-  /*
-  |--------------------------------------------------------------------------
-  | ADMIN NAME
-  |--------------------------------------------------------------------------
-  */
+  function getAdminName(adminId: number | null) {
+    if (!adminId) return "Unassigned";
 
-  function getAdminName(
-    adminId: number | null
-  ) {
-    if (!adminId) {
-      return "Unassigned";
-    }
+    const adminUser = admins.find(
+      (item) => item.id === adminId
+    );
 
-    const adminUser =
-      admins.find(
-        (item) =>
-          item.id === adminId
-      );
-
-    if (!adminUser) {
-      return `Admin #${adminId}`;
-    }
+    if (!adminUser) return `Admin #${adminId}`;
 
     const name = [
       adminUser.first_name,
@@ -624,11 +433,9 @@ export default function AdminOrderDetailsPage() {
     return name || adminUser.email;
   }
 
-  /*
-  |--------------------------------------------------------------------------
-  | LOADING
-  |--------------------------------------------------------------------------
-  */
+  /* ============================================================
+     LOADING SCREEN
+  ============================================================ */
 
   if (loading) {
     return (
@@ -648,11 +455,9 @@ export default function AdminOrderDetailsPage() {
     );
   }
 
-  /*
-  |--------------------------------------------------------------------------
-  | ERROR
-  |--------------------------------------------------------------------------
-  */
+  /* ============================================================
+     ERROR SCREEN
+  ============================================================ */
 
   if (error || !order) {
     return (
@@ -682,9 +487,7 @@ export default function AdminOrderDetailsPage() {
 
               <button
                 type="button"
-                onClick={() =>
-                  loadOrder()
-                }
+                onClick={() => loadOrder()}
                 className="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
               >
                 Try Again
@@ -696,26 +499,25 @@ export default function AdminOrderDetailsPage() {
     );
   }
 
+  /* ============================================================
+     MAIN ADMIN ORDER INTERFACE
+  ============================================================ */
+
   return (
     <div className="min-h-screen bg-[#f6f9fd] text-slate-900">
-      {/* ================================================================
-          MOBILE OVERLAY
-      ================================================================= */}
+
+      {/* MOBILE OVERLAY */}
 
       {sidebarOpen && (
         <button
           type="button"
           aria-label="Close navigation"
-          onClick={() =>
-            setSidebarOpen(false)
-          }
+          onClick={() => setSidebarOpen(false)}
           className="fixed inset-0 z-40 bg-black/30 lg:hidden"
         />
       )}
 
-      {/* ================================================================
-          SIDEBAR
-      ================================================================= */}
+      {/* SIDEBAR */}
 
       <aside
         className={`fixed left-0 top-0 z-50 flex h-screen w-[270px] flex-col border-r border-slate-200 bg-white transition-transform duration-300 ${
@@ -725,10 +527,7 @@ export default function AdminOrderDetailsPage() {
         }`}
       >
         <div className="flex h-[86px] items-center justify-between border-b border-slate-100 px-6">
-          <a
-            href="/admin"
-            className="flex items-center gap-3"
-          >
+          <a href="/admin" className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600">
               <Package className="h-5 w-5 text-white" />
             </div>
@@ -736,9 +535,7 @@ export default function AdminOrderDetailsPage() {
             <div>
               <div className="text-[19px] font-extrabold tracking-tight">
                 TopStudy
-                <span className="text-blue-600">
-                  Tutor
-                </span>
+                <span className="text-blue-600">Tutor</span>
               </div>
 
               <div className="text-[10px] font-medium uppercase tracking-[0.12em] text-slate-400">
@@ -749,9 +546,7 @@ export default function AdminOrderDetailsPage() {
 
           <button
             type="button"
-            onClick={() =>
-              setSidebarOpen(false)
-            }
+            onClick={() => setSidebarOpen(false)}
             className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 lg:hidden"
           >
             <X className="h-5 w-5" />
@@ -764,10 +559,7 @@ export default function AdminOrderDetailsPage() {
           </p>
 
           <nav className="space-y-1">
-            <AdminNavItem
-              href="/admin"
-              label="Dashboard"
-            />
+            <AdminNavItem href="/admin" label="Dashboard" />
 
             <AdminNavItem
               href="/admin/orders"
@@ -775,25 +567,13 @@ export default function AdminOrderDetailsPage() {
               active
             />
 
-            <AdminNavItem
-              href="/admin/users"
-              label="Users"
-            />
+            <AdminNavItem href="/admin/users" label="Users" />
 
-            <AdminNavItem
-              href="/admin/messages"
-              label="Messages"
-            />
+            <AdminNavItem href="/admin/messages" label="Messages" />
 
-            <AdminNavItem
-              href="/admin/revisions"
-              label="Revisions"
-            />
+            <AdminNavItem href="/admin/revisions" label="Revisions" />
 
-            <AdminNavItem
-              href="/admin/analytics"
-              label="Analytics"
-            />
+            <AdminNavItem href="/admin/analytics" label="Analytics" />
           </nav>
 
           <p className="mb-3 mt-8 px-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
@@ -814,50 +594,41 @@ export default function AdminOrderDetailsPage() {
         </div>
       </aside>
 
-      {/* ================================================================
-          MAIN
-      ================================================================= */}
+      {/* MAIN CONTENT */}
 
       <main className="min-h-screen lg:ml-[270px]">
-        {/* Header */}
+
+        {/* HEADER */}
 
         <header className="sticky top-0 z-30 flex h-[76px] items-center justify-between border-b border-slate-200 bg-white/95 px-5 backdrop-blur md:px-8">
           <div className="flex items-center gap-4">
             <button
               type="button"
-              onClick={() =>
-                setSidebarOpen(true)
-              }
+              onClick={() => setSidebarOpen(true)}
               className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50 lg:hidden"
             >
               <Menu className="h-5 w-5" />
             </button>
 
-            <div>
-              <div className="flex items-center gap-2">
-                <a
-                  href="/admin/orders"
-                  className="text-sm font-medium text-slate-400 hover:text-blue-600"
-                >
-                  Orders
-                </a>
+            <div className="flex items-center gap-2">
+              <a
+                href="/admin/orders"
+                className="text-sm font-medium text-slate-400 hover:text-blue-600"
+              >
+                Orders
+              </a>
 
-                <span className="text-slate-300">
-                  /
-                </span>
+              <span className="text-slate-300">/</span>
 
-                <span className="text-sm font-semibold text-slate-700">
-                  #{order.id}
-                </span>
-              </div>
+              <span className="text-sm font-semibold text-slate-700">
+                #{order.id}
+              </span>
             </div>
           </div>
 
           <button
             type="button"
-            onClick={() =>
-              loadOrder(true)
-            }
+            onClick={() => loadOrder(true)}
             disabled={refreshing}
             className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
           >
@@ -867,14 +638,13 @@ export default function AdminOrderDetailsPage() {
               <RefreshCw className="h-4 w-4" />
             )}
 
-            <span className="hidden sm:inline">
-              Refresh
-            </span>
+            <span className="hidden sm:inline">Refresh</span>
           </button>
         </header>
 
         <div className="p-5 md:p-8">
-          {/* Back */}
+
+          {/* BACK */}
 
           <a
             href="/admin/orders"
@@ -884,9 +654,7 @@ export default function AdminOrderDetailsPage() {
             Back to Orders
           </a>
 
-          {/* ============================================================
-              ORDER HEADER
-          ============================================================= */}
+          {/* ORDER HEADER */}
 
           <section className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-7">
             <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-start">
@@ -901,9 +669,7 @@ export default function AdminOrderDetailsPage() {
                       order.status
                     )}`}
                   >
-                    {formatLabel(
-                      order.status
-                    )}
+                    {formatLabel(order.status)}
                   </span>
 
                   <span
@@ -911,10 +677,7 @@ export default function AdminOrderDetailsPage() {
                       order.pricing_status
                     )}`}
                   >
-                    Pricing:{" "}
-                    {formatLabel(
-                      order.pricing_status
-                    )}
+                    Pricing: {formatLabel(order.pricing_status)}
                   </span>
                 </div>
 
@@ -930,18 +693,14 @@ export default function AdminOrderDetailsPage() {
                   <span>
                     Created{" "}
                     <strong className="text-slate-700">
-                      {formatDateTime(
-                        order.created_at
-                      )}
+                      {formatDateTime(order.created_at)}
                     </strong>
                   </span>
 
                   <span>
                     Updated{" "}
                     <strong className="text-slate-700">
-                      {formatDateTime(
-                        order.updated_at
-                      )}
+                      {formatDateTime(order.updated_at)}
                     </strong>
                   </span>
                 </div>
@@ -953,9 +712,7 @@ export default function AdminOrderDetailsPage() {
                 </p>
 
                 <p className="mt-1 text-3xl font-extrabold tracking-tight text-slate-900">
-                  {formatCurrency(
-                    order.budget
-                  )}
+                  {formatCurrency(order.budget)}
                 </p>
 
                 <p className="mt-1 text-[11px] text-slate-400">
@@ -966,12 +723,12 @@ export default function AdminOrderDetailsPage() {
           </section>
 
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
-            {/* ==========================================================
-                LEFT COLUMN
-            =========================================================== */}
+
+            {/* LEFT COLUMN */}
 
             <div className="space-y-6">
-              {/* Assignment information */}
+
+              {/* ASSIGNMENT DETAILS */}
 
               <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <SectionHeader
@@ -982,28 +739,32 @@ export default function AdminOrderDetailsPage() {
                 <div className="grid gap-px bg-slate-100 sm:grid-cols-2 lg:grid-cols-3">
                   <InfoItem
                     label="Service"
-                    value={order.service_type}
+                    value={formatLabel(order.service_type)}
                   />
 
                   <InfoItem
                     label="Academic Level"
-                    value={order.academic_level}
+                    value={formatLabel(order.academic_level)}
                   />
 
                   <InfoItem
                     label="Pages"
-                    value={`${order.pages} pages`}
+                    value={
+                      order.pages !== null
+                        ? `${order.pages} pages`
+                        : "—"
+                    }
                   />
 
                   <InfoItem
                     label="Spacing"
-                    value={order.spacing}
+                    value={formatLabel(order.spacing)}
                   />
 
                   <InfoItem
                     label="Citation Style"
                     value={
-                      order.citation_style ||
+                      formatLabel(order.citation_style) ||
                       "Not specified"
                     }
                   />
@@ -1015,7 +776,7 @@ export default function AdminOrderDetailsPage() {
                 </div>
               </section>
 
-              {/* Deadline */}
+              {/* DEADLINE */}
 
               <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
                 <div className="flex items-start gap-4">
@@ -1029,22 +790,19 @@ export default function AdminOrderDetailsPage() {
                     </p>
 
                     <p className="mt-1 text-lg font-bold text-slate-900">
-                      {formatDateTime(
-                        order.deadline
-                      )}
+                      {formatDateTime(order.deadline)}
                     </p>
 
                     {order.client_timezone && (
                       <p className="mt-1 text-xs text-slate-400">
-                        Client timezone:{" "}
-                        {order.client_timezone}
+                        Client timezone: {order.client_timezone}
                       </p>
                     )}
                   </div>
                 </div>
               </section>
 
-              {/* Instructions */}
+              {/* INSTRUCTIONS */}
 
               <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <SectionHeader
@@ -1065,7 +823,7 @@ export default function AdminOrderDetailsPage() {
                 </div>
               </section>
 
-              {/* Files */}
+              {/* FILES */}
 
               <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <SectionHeader
@@ -1089,12 +847,11 @@ export default function AdminOrderDetailsPage() {
               </section>
             </div>
 
-            {/* ==========================================================
-                RIGHT COLUMN
-            =========================================================== */}
+            {/* RIGHT COLUMN */}
 
             <aside className="space-y-6">
-              {/* Student */}
+
+              {/* STUDENT */}
 
               <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <h2 className="text-sm font-bold text-slate-900">
@@ -1120,22 +877,19 @@ export default function AdminOrderDetailsPage() {
                 <div className="mt-5 border-t border-slate-100 pt-4">
                   <InfoRow
                     label="User ID"
-                    value={String(
-                      order.user_id
-                    )}
+                    value={String(order.user_id)}
                   />
 
                   <InfoRow
                     label="Timezone"
                     value={
-                      order.client_timezone ||
-                      "Not provided"
+                      order.client_timezone || "Not provided"
                     }
                   />
                 </div>
               </section>
 
-              {/* Order status */}
+              {/* ORDER STATUS */}
 
               <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <h2 className="text-sm font-bold text-slate-900">
@@ -1158,9 +912,7 @@ export default function AdminOrderDetailsPage() {
                           order.status
                         )}`}
                       >
-                        {formatLabel(
-                          order.status
-                        )}
+                        {formatLabel(order.status)}
                       </span>
                     </div>
                   </div>
@@ -1169,30 +921,24 @@ export default function AdminOrderDetailsPage() {
                 <div className="mt-5 border-t border-slate-100 pt-4">
                   <InfoRow
                     label="Pricing"
-                    value={formatLabel(
-                      order.pricing_status
-                    )}
+                    value={formatLabel(order.pricing_status)}
                   />
 
                   <InfoRow
                     label="Assigned Admin"
-                    value={getAdminName(
-                      order.assigned_admin_id
-                    )}
+                    value={getAdminName(order.assigned_admin_id)}
                   />
                 </div>
               </section>
 
-              {/* ========================================================
-                  QUICK ACTIONS
-              ========================================================= */}
+              {/* QUICK ACTIONS */}
 
               <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <h2 className="text-sm font-bold text-slate-900">
                   Quick Actions
                 </h2>
 
-                {/* Success */}
+                {/* SUCCESS MESSAGE */}
 
                 {actionMessage && (
                   <div
@@ -1201,13 +947,11 @@ export default function AdminOrderDetailsPage() {
                   >
                     <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
 
-                    <span>
-                      {actionMessage}
-                    </span>
+                    <span>{actionMessage}</span>
                   </div>
                 )}
 
-                {/* Error */}
+                {/* ERROR MESSAGE */}
 
                 {actionError && (
                   <div
@@ -1216,15 +960,11 @@ export default function AdminOrderDetailsPage() {
                   >
                     <X className="mt-0.5 h-4 w-4 shrink-0" />
 
-                    <span>
-                      {actionError}
-                    </span>
+                    <span>{actionError}</span>
                   </div>
                 )}
 
-                {/* ======================================================
-                    UPDATE STATUS
-                ======================================================= */}
+                {/* UPDATE STATUS */}
 
                 <div className="mt-5">
                   <label
@@ -1238,26 +978,17 @@ export default function AdminOrderDetailsPage() {
                     <select
                       id="order-status"
                       value={order.status}
-                      disabled={
-                        updatingStatus
-                      }
+                      disabled={updatingStatus}
                       onChange={(event) =>
-                        updateStatus(
-                          event.target.value
-                        )
+                        updateStatus(event.target.value)
                       }
                       className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-semibold text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-50"
                     >
-                      {ORDER_STATUSES.map(
-                        (status) => (
-                          <option
-                            key={status}
-                            value={status}
-                          >
-                            {status}
-                          </option>
-                        )
-                      )}
+                      {ORDER_STATUSES.map((status) => (
+                        <option key={status} value={status}>
+                          {status}
+                        </option>
+                      ))}
                     </select>
 
                     {updatingStatus && (
@@ -1266,9 +997,7 @@ export default function AdminOrderDetailsPage() {
                   </div>
                 </div>
 
-                {/* ======================================================
-                    ASSIGN ADMIN
-                ======================================================= */}
+                {/* ASSIGN ADMINISTRATOR */}
 
                 <div className="mt-5">
                   <label
@@ -1281,48 +1010,32 @@ export default function AdminOrderDetailsPage() {
                   <div className="relative">
                     <select
                       id="assigned-admin"
-                      value={
-                        order.assigned_admin_id ??
-                        ""
-                      }
-                      disabled={
-                        assigningAdmin
-                      }
+                      value={order.assigned_admin_id ?? ""}
+                      disabled={assigningAdmin}
                       onChange={(event) =>
-                        assignAdmin(
-                          event.target.value
-                        )
+                        assignAdmin(event.target.value)
                       }
                       className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-semibold text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-50"
                     >
-                      <option value="">
-                        Unassigned
-                      </option>
+                      <option value="">Unassigned</option>
 
-                      {admins.map(
-                        (adminUser) => {
-                          const name = [
-                            adminUser.first_name,
-                            adminUser.last_name,
-                          ]
-                            .filter(Boolean)
-                            .join(" ");
+                      {admins.map((adminUser) => {
+                        const name = [
+                          adminUser.first_name,
+                          adminUser.last_name,
+                        ]
+                          .filter(Boolean)
+                          .join(" ");
 
-                          return (
-                            <option
-                              key={
-                                adminUser.id
-                              }
-                              value={
-                                adminUser.id
-                              }
-                            >
-                              {name ||
-                                adminUser.email}
-                            </option>
-                          );
-                        }
-                      )}
+                        return (
+                          <option
+                            key={adminUser.id}
+                            value={adminUser.id}
+                          >
+                            {name || adminUser.email}
+                          </option>
+                        );
+                      })}
                     </select>
 
                     {assigningAdmin && (
@@ -1337,9 +1050,7 @@ export default function AdminOrderDetailsPage() {
                   )}
                 </div>
 
-                {/* ======================================================
-                    MESSAGE STUDENT
-                ======================================================= */}
+                {/* MESSAGE STUDENT */}
 
                 <button
                   type="button"
@@ -1362,9 +1073,9 @@ export default function AdminOrderDetailsPage() {
   );
 }
 
-/* ==========================================================================
+/* ============================================================
    NAVIGATION
-============================================================================ */
+============================================================ */
 
 function AdminNavItem({
   href,
@@ -1386,9 +1097,7 @@ function AdminNavItem({
     >
       <span
         className={`h-1.5 w-1.5 rounded-full ${
-          active
-            ? "bg-white"
-            : "bg-slate-300"
+          active ? "bg-white" : "bg-slate-300"
         }`}
       />
 
@@ -1403,9 +1112,9 @@ function AdminNavItem({
   );
 }
 
-/* ==========================================================================
+/* ============================================================
    SECTION HEADER
-============================================================================ */
+============================================================ */
 
 function SectionHeader({
   icon: Icon,
@@ -1427,9 +1136,9 @@ function SectionHeader({
   );
 }
 
-/* ==========================================================================
+/* ============================================================
    INFO ITEM
-============================================================================ */
+============================================================ */
 
 function InfoItem({
   label,
@@ -1451,9 +1160,9 @@ function InfoItem({
   );
 }
 
-/* ==========================================================================
+/* ============================================================
    INFO ROW
-============================================================================ */
+============================================================ */
 
 function InfoRow({
   label,
