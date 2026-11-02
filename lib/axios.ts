@@ -3,8 +3,11 @@ import axios, {
   InternalAxiosRequestConfig,
 } from "axios";
 
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL;
+
 const api = axios.create({
-  baseURL: `${process.env.NEXT_PUBLIC_API_URL}/api`,
+  baseURL: `${API_URL}/api`,
   headers: {
     "Content-Type": "application/json",
   },
@@ -14,32 +17,30 @@ const api = axios.create({
 |--------------------------------------------------------------------------
 | REQUEST INTERCEPTOR
 |--------------------------------------------------------------------------
-| Attach the access token to EVERY API request.
+| Attach the access token to every browser request.
 |--------------------------------------------------------------------------
 */
 
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    if (typeof window !== "undefined") {
-      const token =
-        localStorage.getItem("accessToken");
+    if (typeof window === "undefined") {
+      return config;
+    }
 
-      console.log(
-        "[API REQUEST]",
-        config.method?.toUpperCase(),
-        config.url,
-        "TOKEN:",
-        token ? "FOUND" : "MISSING"
+    const token =
+      window.localStorage.getItem(
+        "accessToken"
       );
 
-      if (token) {
-        config.headers.set(
-          "Authorization",
-          `Bearer ${token}`
-        );
-      } else {
-        config.headers.delete("Authorization");
-      }
+    if (token) {
+      config.headers.set(
+        "Authorization",
+        `Bearer ${token}`
+      );
+    } else {
+      config.headers.delete(
+        "Authorization"
+      );
     }
 
     return config;
@@ -49,6 +50,12 @@ api.interceptors.request.use(
   }
 );
 
+/*
+|--------------------------------------------------------------------------
+| REFRESH QUEUE
+|--------------------------------------------------------------------------
+*/
+
 let isRefreshing = false;
 
 let failedQueue: {
@@ -56,26 +63,26 @@ let failedQueue: {
   reject: (error: unknown) => void;
 }[] = [];
 
-const processQueue = (
+function processQueue(
   error: unknown,
   token: string | null = null
-) => {
-  failedQueue.forEach((promise) => {
-    if (error) {
-      promise.reject(error);
-    } else if (token) {
-      promise.resolve(token);
+) {
+  failedQueue.forEach(
+    ({ resolve, reject }) => {
+      if (error) {
+        reject(error);
+      } else if (token) {
+        resolve(token);
+      }
     }
-  });
+  );
 
   failedQueue = [];
-};
+}
 
 /*
 |--------------------------------------------------------------------------
 | RESPONSE INTERCEPTOR
-|--------------------------------------------------------------------------
-| If access token expires, refresh it and retry the request.
 |--------------------------------------------------------------------------
 */
 
@@ -90,6 +97,12 @@ api.interceptors.response.use(
           })
         | undefined;
 
+    /*
+    |--------------------------------------------------------------------------
+    | Only handle 401 responses
+    |--------------------------------------------------------------------------
+    */
+
     if (
       error.response?.status !== 401 ||
       !originalRequest ||
@@ -100,7 +113,7 @@ api.interceptors.response.use(
 
     /*
     |--------------------------------------------------------------------------
-    | Another request is already refreshing
+    | Wait if another request is refreshing
     |--------------------------------------------------------------------------
     */
 
@@ -127,7 +140,9 @@ api.interceptors.response.use(
 
     try {
       const refreshToken =
-        localStorage.getItem("refreshToken");
+        window.localStorage.getItem(
+          "refreshToken"
+        );
 
       if (!refreshToken) {
         throw new Error(
@@ -135,76 +150,75 @@ api.interceptors.response.use(
         );
       }
 
-      console.log(
-        "[AUTH] Access token expired. Refreshing..."
-      );
-
       /*
-      |----------------------------------------------------------------------
-      | IMPORTANT:
-      | Use plain axios here, not api, so we don't trigger the interceptor
-      | recursively.
-      |----------------------------------------------------------------------
+      |--------------------------------------------------------------------------
+      | IMPORTANT
+      |--------------------------------------------------------------------------
+      | Use plain axios here.
+      | Do NOT use `api`, otherwise the refresh request itself can enter
+      | the interceptor again.
+      |--------------------------------------------------------------------------
       */
 
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/refresh`,
-        {
-          refreshToken,
-        }
-      );
+      const response =
+        await axios.post<{
+          accessToken: string;
+        }>(
+          `${API_URL}/api/auth/refresh`,
+          {
+            refreshToken,
+          }
+        );
 
-      const accessToken =
+      const newAccessToken =
         response.data.accessToken;
 
-      if (!accessToken) {
+      if (!newAccessToken) {
         throw new Error(
-          "Refresh response did not contain an access token."
+          "Refresh response did not contain accessToken."
         );
       }
 
-      localStorage.setItem(
+      window.localStorage.setItem(
         "accessToken",
-        accessToken
+        newAccessToken
       );
 
       api.defaults.headers.common[
         "Authorization"
-      ] = `Bearer ${accessToken}`;
+      ] = `Bearer ${newAccessToken}`;
 
-      processQueue(null, accessToken);
+      processQueue(
+        null,
+        newAccessToken
+      );
 
       originalRequest.headers.set(
         "Authorization",
-        `Bearer ${accessToken}`
-      );
-
-      console.log(
-        "[AUTH] Access token refreshed successfully."
+        `Bearer ${newAccessToken}`
       );
 
       return api(originalRequest);
     } catch (refreshError) {
       processQueue(refreshError);
 
-      console.error(
-        "[AUTH] Token refresh failed:",
-        refreshError
+      window.localStorage.removeItem(
+        "accessToken"
       );
 
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-      localStorage.removeItem("user");
+      window.localStorage.removeItem(
+        "refreshToken"
+      );
+
+      window.localStorage.removeItem(
+        "user"
+      );
 
       delete api.defaults.headers.common[
         "Authorization"
       ];
 
-      if (
-        typeof window !== "undefined"
-      ) {
-        window.location.href = "/login";
-      }
+      window.location.href = "/login";
 
       return Promise.reject(
         refreshError

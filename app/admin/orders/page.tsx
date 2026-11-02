@@ -21,26 +21,57 @@ import {
   X,
 } from "lucide-react";
 
-import { useEffect, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
+
+import api from "@/lib/axios";
+
+/*
+|--------------------------------------------------------------------------
+| TYPES
+|--------------------------------------------------------------------------
+*/
 
 type Order = {
   id: number;
   user_id: number;
+
   title: string;
   subject: string;
+
   service_type: string | null;
+  academic_level?: string | null;
+
   pages: number | null;
+  spacing?: string | null;
+  citation_style?: string | null;
+
   deadline: string | null;
+  instructions?: string | null;
+
   created_at: string;
+  updated_at?: string;
+
   budget: number | string | null;
+
   pricing_status: string | null;
-  payment_status: string | null;
+
+  // Optional because the backend may not return this field.
+  payment_status?: string | null;
+
   status: string | null;
+
+  assigned_admin_id?: number | null;
+  client_timezone?: string | null;
 };
 
 type OrdersResponse = {
   success: boolean;
   orders: Order[];
+
   pagination?: {
     page: number;
     limit: number;
@@ -49,169 +80,235 @@ type OrdersResponse = {
   };
 };
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-
 const PAGE_SIZE = 10;
 
+/*
+|--------------------------------------------------------------------------
+| ADMIN ORDERS PAGE
+|--------------------------------------------------------------------------
+*/
+
 export default function AdminOrdersPage() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] =
+    useState(false);
 
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const [orders, setOrders] =
+    useState<Order[]>([]);
 
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] =
+    useState(true);
 
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [pricingFilter, setPricingFilter] = useState("all");
+  const [refreshing, setRefreshing] =
+    useState(false);
+
+  const [error, setError] =
+    useState<string | null>(null);
+
+  const [search, setSearch] =
+    useState("");
+
+  const [statusFilter, setStatusFilter] =
+    useState("all");
+
+  const [pricingFilter, setPricingFilter] =
+    useState("all");
 
   const [sortDirection, setSortDirection] =
     useState<"desc" | "asc">("desc");
 
-  const [page, setPage] = useState(1);
-  const [totalOrders, setTotalOrders] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
+  const [page, setPage] =
+    useState(1);
+
+  const [totalOrders, setTotalOrders] =
+    useState(0);
+
+  const [totalPages, setTotalPages] =
+    useState(1);
 
   /*
   |--------------------------------------------------------------------------
   | LOAD ORDERS
   |--------------------------------------------------------------------------
+  |
+  | IMPORTANT:
+  |
+  | We use the shared Axios instance.
+  |
+  | @/lib/axios automatically attaches:
+  |
+  | Authorization: Bearer accessToken
+  |
+  | This is required by the backend auth middleware.
+  |
   */
 
-  async function loadOrders(showRefresh = false) {
-    try {
-      if (showRefresh) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
-      }
-
-      setError(null);
-
-      const params = new URLSearchParams();
-
-      params.set("page", String(page));
-      params.set("limit", String(PAGE_SIZE));
-      params.set("sort", sortDirection);
-
-      if (search.trim()) {
-        params.set("search", search.trim());
-      }
-
-      if (statusFilter !== "all") {
-        params.set("status", statusFilter);
-      }
-
-      if (pricingFilter !== "all") {
-        params.set("pricing_status", pricingFilter);
-      }
-
-      const response = await fetch(
-        `${API_URL}/api/admin/orders?${params.toString()}`,
-        {
-          method: "GET",
-          credentials: "include",
-          cache: "no-store",
-        }
-      );
-
-      let data:
-        | OrdersResponse
-        | { error?: string; message?: string }
-        | null = null;
-
+  const loadOrders = useCallback(
+    async (showRefresh = false) => {
       try {
-        data = await response.json();
-      } catch {
-        data = null;
-      }
+        if (showRefresh) {
+          setRefreshing(true);
+        } else {
+          setLoading(true);
+        }
 
-      if (!response.ok) {
+        setError(null);
+
+        /*
+        |--------------------------------------------------------------------------
+        | CHECK ACCESS TOKEN
+        |--------------------------------------------------------------------------
+        */
+
+        const accessToken =
+          localStorage.getItem("accessToken");
+
+        if (!accessToken) {
+          throw new Error(
+            "Your admin session has expired. Please sign in again."
+          );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | REQUEST PARAMETERS
+        |--------------------------------------------------------------------------
+        */
+
+        const params: Record<string, string | number> = {
+          page,
+          limit: PAGE_SIZE,
+          sort: sortDirection,
+        };
+
+        if (search.trim()) {
+          params.search = search.trim();
+        }
+
+        if (statusFilter !== "all") {
+          params.status = statusFilter;
+        }
+
+        if (pricingFilter !== "all") {
+          params.pricing_status = pricingFilter;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | API REQUEST
+        |--------------------------------------------------------------------------
+        |
+        | Do not use fetch() here.
+        |
+        | Axios handles the authentication header and
+        | token refresh through the existing interceptor.
+        |
+        */
+
+        const response =
+          await api.get<OrdersResponse>(
+            "/admin/orders",
+            {
+              params,
+            }
+          );
+
+        const result = response.data;
+
+        if (!result.success) {
+          throw new Error(
+            "The server could not load orders."
+          );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | UPDATE ORDERS
+        |--------------------------------------------------------------------------
+        */
+
+        setOrders(
+          Array.isArray(result.orders)
+            ? result.orders
+            : []
+        );
+
+        setTotalOrders(
+          result.pagination?.total ??
+            result.orders?.length ??
+            0
+        );
+
+        setTotalPages(
+          Math.max(
+            result.pagination?.totalPages ?? 1,
+            1
+          )
+        );
+
+      } catch (err: any) {
+        console.error(
+          "ADMIN ORDERS ERROR:",
+          err
+        );
+
         const message =
-          data &&
-          typeof data === "object" &&
-          ("error" in data || "message" in data)
-            ? String(
-                "error" in data
-                  ? data.error
-                  : data.message
-              )
-            : `Failed to load orders (${response.status})`;
+          err.response?.data?.error ||
+          err.response?.data?.message ||
+          err.message ||
+          "Failed to load orders.";
 
-        throw new Error(message);
+        setError(message);
+
+        setOrders([]);
+
+        setTotalOrders(0);
+
+        setTotalPages(1);
+
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
       }
-
-      const result = data as OrdersResponse;
-
-      setOrders(result.orders || []);
-
-      setTotalOrders(
-        result.pagination?.total ??
-          result.orders?.length ??
-          0
-      );
-
-      setTotalPages(
-        result.pagination?.totalPages ?? 1
-      );
-    } catch (err) {
-      console.error("ADMIN ORDERS ERROR:", err);
-
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to load orders."
-      );
-
-      setOrders([]);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }
+    },
+    [
+      page,
+      search,
+      statusFilter,
+      pricingFilter,
+      sortDirection,
+    ]
+  );
 
   /*
   |--------------------------------------------------------------------------
-  | LOAD WHEN FILTERS CHANGE
+  | AUTOMATIC DATA LOADING
   |--------------------------------------------------------------------------
   */
 
   useEffect(() => {
-    loadOrders();
-  }, [
-    page,
-    statusFilter,
-    pricingFilter,
-    sortDirection,
-  ]);
+    const timer = setTimeout(
+      () => {
+        loadOrders();
+      },
+      search.trim() ? 450 : 0
+    );
+
+    return () => clearTimeout(timer);
+  }, [loadOrders, search]);
 
   /*
   |--------------------------------------------------------------------------
-  | SEARCH
+  | RESET PAGE WHEN FILTERS CHANGE
   |--------------------------------------------------------------------------
   */
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setPage(1);
-    }, 450);
-
-    return () => clearTimeout(timer);
-  }, [search]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      loadOrders();
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [search]);
+    setPage(1);
+  }, [search, statusFilter, pricingFilter]);
 
   /*
   |--------------------------------------------------------------------------
-  | HELPERS
+  | FORMAT CURRENCY
   |--------------------------------------------------------------------------
   */
 
@@ -232,11 +329,20 @@ export default function AdminOrdersPage() {
       return "—";
     }
 
-    return `$${amount.toLocaleString(undefined, {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })}`;
+    return `$${amount.toLocaleString(
+      undefined,
+      {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }
+    )}`;
   }
+
+  /*
+  |--------------------------------------------------------------------------
+  | FORMAT DATE
+  |--------------------------------------------------------------------------
+  */
 
   function formatDate(
     value: string | null
@@ -249,12 +355,21 @@ export default function AdminOrdersPage() {
       return "—";
     }
 
-    return date.toLocaleDateString(undefined, {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
+    return date.toLocaleDateString(
+      undefined,
+      {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      }
+    );
   }
+
+  /*
+  |--------------------------------------------------------------------------
+  | FORMAT STATUS
+  |--------------------------------------------------------------------------
+  */
 
   function formatStatus(
     value: string | null
@@ -267,6 +382,12 @@ export default function AdminOrdersPage() {
         char.toUpperCase()
       );
   }
+
+  /*
+  |--------------------------------------------------------------------------
+  | STATUS COLORS
+  |--------------------------------------------------------------------------
+  */
 
   function getStatusClass(
     status: string | null
@@ -309,6 +430,12 @@ export default function AdminOrdersPage() {
     return "bg-slate-100 text-slate-600";
   }
 
+  /*
+  |--------------------------------------------------------------------------
+  | PRICING COLORS
+  |--------------------------------------------------------------------------
+  */
+
   function getPricingClass(
     status: string | null
   ) {
@@ -326,14 +453,19 @@ export default function AdminOrdersPage() {
     return "bg-slate-100 text-slate-600";
   }
 
+  /*
+  |--------------------------------------------------------------------------
+  | GET ORDER STATUS
+  |--------------------------------------------------------------------------
+  */
+
   function getOrderStatus(order: Order) {
     if (order.status) {
       return order.status;
     }
 
     if (
-      order.pricing_status ===
-      "pending_review"
+      order.pricing_status === "pending_review"
     ) {
       return "pending";
     }
@@ -343,25 +475,28 @@ export default function AdminOrdersPage() {
 
   /*
   |--------------------------------------------------------------------------
-  | COUNTS
+  | STATISTICS
   |--------------------------------------------------------------------------
   */
 
-  const pendingReviewCount = orders.filter(
-    (order) =>
-      order.pricing_status ===
-      "pending_review"
-  ).length;
+  const pendingReviewCount =
+    orders.filter(
+      (order) =>
+        order.pricing_status ===
+        "pending_review"
+    ).length;
 
-  const inProgressCount = orders.filter(
-    (order) =>
-      order.status === "in_progress"
-  ).length;
+  const inProgressCount =
+    orders.filter(
+      (order) =>
+        order.status === "in_progress"
+    ).length;
 
-  const completedCount = orders.filter(
-    (order) =>
-      order.status === "completed"
-  ).length;
+  const completedCount =
+    orders.filter(
+      (order) =>
+        order.status === "completed"
+    ).length;
 
   /*
   |--------------------------------------------------------------------------
@@ -378,7 +513,9 @@ export default function AdminOrdersPage() {
         <button
           type="button"
           aria-label="Close navigation"
-          onClick={() => setSidebarOpen(false)}
+          onClick={() =>
+            setSidebarOpen(false)
+          }
           className="fixed inset-0 z-40 bg-black/30 lg:hidden"
         />
       )}
@@ -393,17 +530,21 @@ export default function AdminOrdersPage() {
         }`}
       >
 
+        {/* LOGO */}
+
         <div className="flex h-[86px] items-center justify-between border-b border-slate-100 px-6">
 
           <a
             href="/admin"
             className="flex items-center gap-3"
           >
+
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600">
               <Package className="h-5 w-5 text-white" />
             </div>
 
             <div>
+
               <div className="text-[19px] font-extrabold tracking-tight text-slate-900">
                 TopStudy
                 <span className="text-blue-600">
@@ -414,7 +555,9 @@ export default function AdminOrdersPage() {
               <div className="text-[10px] font-medium uppercase tracking-[0.12em] text-slate-400">
                 Admin Portal
               </div>
+
             </div>
+
           </a>
 
           <button
@@ -428,6 +571,8 @@ export default function AdminOrdersPage() {
           </button>
 
         </div>
+
+        {/* NAVIGATION */}
 
         <div className="flex-1 overflow-y-auto px-4 py-6">
 
@@ -492,7 +637,7 @@ export default function AdminOrdersPage() {
 
       </aside>
 
-      {/* MAIN */}
+      {/* MAIN CONTENT */}
 
       <main className="min-h-screen lg:ml-[270px]">
 
@@ -513,6 +658,7 @@ export default function AdminOrdersPage() {
             </button>
 
             <div>
+
               <h1 className="text-xl font-bold tracking-tight md:text-2xl">
                 Orders
               </h1>
@@ -520,6 +666,7 @@ export default function AdminOrdersPage() {
               <p className="hidden text-xs text-slate-500 sm:block">
                 Manage and monitor all student orders
               </p>
+
             </div>
 
           </div>
@@ -527,9 +674,10 @@ export default function AdminOrdersPage() {
           <button
             type="button"
             onClick={() => loadOrders(true)}
-            disabled={refreshing}
+            disabled={refreshing || loading}
             className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
           >
+
             {refreshing ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
@@ -539,6 +687,7 @@ export default function AdminOrdersPage() {
             <span className="hidden sm:inline">
               Refresh
             </span>
+
           </button>
 
         </header>
@@ -550,8 +699,11 @@ export default function AdminOrdersPage() {
           <div className="mb-6">
 
             <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-600">
+
               <ShoppingCart className="h-3.5 w-3.5" />
+
               Order Management
+
             </div>
 
             <h2 className="text-2xl font-bold tracking-tight text-slate-900">
@@ -610,6 +762,7 @@ export default function AdminOrdersPage() {
               <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
 
               <div>
+
                 <p className="font-semibold">
                   Unable to load orders
                 </p>
@@ -617,6 +770,16 @@ export default function AdminOrdersPage() {
                 <p className="mt-0.5 text-xs">
                   {error}
                 </p>
+
+                {error.toLowerCase().includes("session") && (
+                  <a
+                    href="/login"
+                    className="mt-2 inline-block font-semibold underline"
+                  >
+                    Sign in again
+                  </a>
+                )}
+
               </div>
 
             </div>
@@ -664,12 +827,9 @@ export default function AdminOrdersPage() {
 
                 <select
                   value={statusFilter}
-                  onChange={(event) => {
-                    setStatusFilter(
-                      event.target.value
-                    );
-                    setPage(1);
-                  }}
+                  onChange={(event) =>
+                    setStatusFilter(event.target.value)
+                  }
                   className="h-11 w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/50 pl-10 pr-8 text-sm font-medium text-slate-700 outline-none focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100"
                 >
 
@@ -711,12 +871,9 @@ export default function AdminOrdersPage() {
 
                 <select
                   value={pricingFilter}
-                  onChange={(event) => {
-                    setPricingFilter(
-                      event.target.value
-                    );
-                    setPage(1);
-                  }}
+                  onChange={(event) =>
+                    setPricingFilter(event.target.value)
+                  }
                   className="h-11 w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/50 pl-10 pr-8 text-sm font-medium text-slate-700 outline-none focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100"
                 >
 
@@ -747,11 +904,21 @@ export default function AdminOrdersPage() {
             <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4">
 
               <p className="text-xs text-slate-500">
+
                 Showing{" "}
+
                 <span className="font-semibold text-slate-700">
                   {orders.length}
                 </span>{" "}
+
+                of{" "}
+
+                <span className="font-semibold text-slate-700">
+                  {totalOrders}
+                </span>{" "}
+
                 orders
+
               </p>
 
               <button
@@ -783,7 +950,7 @@ export default function AdminOrdersPage() {
 
           </section>
 
-          {/* TABLE */}
+          {/* ORDERS TABLE */}
 
           <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
 
@@ -822,11 +989,15 @@ export default function AdminOrdersPage() {
                 </div>
 
                 <h3 className="mt-4 text-sm font-bold text-slate-800">
-                  No orders found
+                  {error
+                    ? "Orders could not be loaded"
+                    : "No orders found"}
                 </h3>
 
                 <p className="mt-1 text-xs text-slate-400">
-                  Try changing your search or filters.
+                  {error
+                    ? "Check your connection and try refreshing."
+                    : "Try changing your search or filters."}
                 </p>
 
               </div>
@@ -834,6 +1005,7 @@ export default function AdminOrdersPage() {
             ) : (
 
               <>
+
                 <div className="overflow-x-auto">
 
                   <table className="w-full min-w-[1000px]">
@@ -901,9 +1073,7 @@ export default function AdminOrdersPage() {
                               </p>
 
                               <p className="mt-1 text-[11px] text-slate-400">
-                                {formatDate(
-                                  order.created_at
-                                )}
+                                {formatDate(order.created_at)}
                               </p>
 
                             </td>
@@ -951,12 +1121,17 @@ export default function AdminOrdersPage() {
                               </p>
 
                               {order.service_type && (
+
                                 <p className="mt-1 text-[11px] text-slate-400">
+
                                   {order.service_type}
+
                                   {order.pages
                                     ? ` • ${order.pages} pages`
                                     : ""}
+
                                 </p>
+
                               )}
 
                             </td>
@@ -970,9 +1145,7 @@ export default function AdminOrdersPage() {
                                 <Clock3 className="h-4 w-4 text-slate-400" />
 
                                 <span className="text-sm text-slate-700">
-                                  {formatDate(
-                                    order.deadline
-                                  )}
+                                  {formatDate(order.deadline)}
                                 </span>
 
                               </div>
@@ -984,9 +1157,7 @@ export default function AdminOrdersPage() {
                             <td className="px-5 py-5">
 
                               <p className="text-sm font-bold text-slate-800">
-                                {formatCurrency(
-                                  order.budget
-                                )}
+                                {formatCurrency(order.budget)}
                               </p>
 
                               <p className="mt-1 text-[11px] text-slate-400">
@@ -1005,9 +1176,11 @@ export default function AdminOrdersPage() {
                                   order.pricing_status
                                 )}`}
                               >
+
                                 {formatStatus(
                                   order.pricing_status
                                 )}
+
                               </span>
 
                             </td>
@@ -1021,9 +1194,9 @@ export default function AdminOrdersPage() {
                                   status
                                 )}`}
                               >
-                                {formatStatus(
-                                  status
-                                )}
+
+                                {formatStatus(status)}
+
                               </span>
 
                             </td>
@@ -1062,27 +1235,29 @@ export default function AdminOrdersPage() {
                 <div className="flex items-center justify-between border-t border-slate-100 px-5 py-4 md:px-6">
 
                   <p className="text-xs text-slate-500">
+
                     Page{" "}
+
                     <span className="font-semibold text-slate-700">
                       {page}
                     </span>{" "}
+
                     of{" "}
+
                     <span className="font-semibold text-slate-700">
                       {totalPages}
                     </span>
+
                   </p>
 
                   <div className="flex gap-2">
 
                     <button
                       type="button"
-                      disabled={page <= 1}
+                      disabled={page <= 1 || loading}
                       onClick={() =>
                         setPage((current) =>
-                          Math.max(
-                            1,
-                            current - 1
-                          )
+                          Math.max(1, current - 1)
                         )
                       }
                       className="flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
@@ -1097,7 +1272,7 @@ export default function AdminOrdersPage() {
                     <button
                       type="button"
                       disabled={
-                        page >= totalPages
+                        page >= totalPages || loading
                       }
                       onClick={() =>
                         setPage((current) =>
@@ -1150,6 +1325,7 @@ function AdminNavItem({
   active?: boolean;
 }) {
   return (
+
     <a
       href={href}
       className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
@@ -1174,6 +1350,7 @@ function AdminNavItem({
       )}
 
     </a>
+
   );
 }
 
@@ -1197,6 +1374,7 @@ function OrderStatCard({
   iconColor: string;
 }) {
   return (
+
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
 
       <div className="flex items-start justify-between">
@@ -1216,14 +1394,17 @@ function OrderStatCard({
         <div
           className={`flex h-11 w-11 items-center justify-center rounded-xl ${iconBg}`}
         >
+
           <Icon
             className={`h-5 w-5 ${iconColor}`}
           />
+
         </div>
 
       </div>
 
     </div>
+
   );
 }
 
@@ -1239,8 +1420,12 @@ function TableHeader({
   children: React.ReactNode;
 }) {
   return (
+
     <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
+
       {children}
+
     </th>
+
   );
 }
